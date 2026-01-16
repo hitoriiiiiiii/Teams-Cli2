@@ -1,5 +1,55 @@
-#node modules
-node_modules
+# =========================
+# Node.js dependencies
+# =========================
+node_modules/
+npm-debug.log
 
-#env
+# =========================
+# Environment variables
+# =========================
 .env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# =========================
+# Prisma
+# =========================
+prisma/.env
+prisma/migrations/
+prisma/dev.db
+prisma/dev.db-journal
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+*.out
+
+# =========================
+# Build outputs
+# =========================
+dist/
+build/
+
+# =========================
+# VSCode / IDE
+# =========================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# =========================
+# System files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Optional: coverage
+# =========================
+coverage/
+
