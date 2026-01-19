@@ -23,3 +23,10 @@ export async function upsertGitHubUser(user: GitHubUser) {
     },
   });
 }
+
+//get user by username 
+export async function getUserByUsername(username: string) {
+  return prisma.user.findFirst({
+    where: { username },
+  });
+}

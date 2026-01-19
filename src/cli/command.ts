@@ -8,13 +8,11 @@ import {
   listRepoCommand,
 } from './repo';
 import { getCurrentUser } from '../utils/currentUser';
-import { createTeam,
-  getTeamByUser,
- } from '../controllers/team.controller';
-import { addUsertoTeam } from "../controllers/team.controller";
-import prisma from "../db/prisma";
+import { createTeam, getTeamByUser } from '../controllers/team.controller';
+import { addUsertoTeam } from '../controllers/team.controller';
+import prisma from '../db/prisma';
 import { ensureUserInTeam } from './team';
-
+import { getUserByUsername } from '../controllers/user.controller';
 
 const program = new Command();
 
@@ -38,7 +36,6 @@ program
   .action(() => {
     logoutUser();
   });
-
 
 program
   .command('whoami')
@@ -87,7 +84,7 @@ team
   .command('create')
   .description('Create a new team')
   .option('-n, --name <name>', 'Team name')
-  .action(async(opts) => {
+  .action(async (opts) => {
     if (!opts.name) {
       console.error('❌ Team name is required');
       process.exit(1);
@@ -98,7 +95,6 @@ team
     console.log('✅ Team created');
     console.log(`ID : ${team.id}`);
     console.log(`Name: ${team.name}`);
-
   });
 
 team
@@ -114,7 +110,7 @@ team
     }
 
     console.log('Your Teams:');
-    teams.forEach(t => {
+    teams.forEach((t) => {
       console.log(`ID: ${t.team.id} | Name: ${t.team.name}`);
     });
   });
@@ -180,12 +176,9 @@ member
 
     const user = getCurrentUser();
     const teamId = Number(opts.team);
+    const targetUser = await getUserByUsername(opts.username);
 
     await ensureUserInTeam(user.id, teamId);
-
-    const targetUser = await prisma.user.findUnique({
-      where: { username: opts.username },
-    });
 
     if (!targetUser) {
       console.error('❌ User not found');

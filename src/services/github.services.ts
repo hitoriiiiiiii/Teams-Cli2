@@ -1,46 +1,15 @@
-import fs from 'fs';
-import path from 'path';
 import axios from 'axios';
-import { getAuthToken } from '../config/auth.config';
+import { getAuthToken, readConfig } from '../config/auth.config';
+import {
+  createRepo,
+  deleteRepoByFullName,
+  getReposByTeam,
+} from '../controllers/repo.controller';
 
-const DATA_DIR = path.join(process.cwd(), '.teams');
-const REPO_FILE = path.join(DATA_DIR, 'repos.json');
+const GITHUB_API = 'https://api.github.com';
 
-function ensureStorage() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR);
-  }
-
-  if (!fs.existsSync(REPO_FILE)) {
-    fs.writeFileSync(REPO_FILE, JSON.stringify([]));
-  }
-}
-
-function readRepos() {
-  ensureStorage();
-  return JSON.parse(fs.readFileSync(REPO_FILE, 'utf-8'));
-}
-
-function writeRepos(data: any[]) {
-  fs.writeFileSync(REPO_FILE, JSON.stringify(data, null, 2));
-}
-
-/*
- * Verify repo exists on GitHub
- */
-async function verifyRepo(owner: string, repo: string) {
-  const token = getAuthToken();
-
-  await axios.get(`https://api.github.com/repos/${owner}/${repo}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-    },
-  });
-}
-
-/*
- * Connect a GitHub repo
+/**
+ * Connect a GitHub repository to active team
  */
 export async function connectRepo({
   owner,
@@ -49,39 +18,63 @@ export async function connectRepo({
 }: {
   owner: string;
   repo: string;
-  isPrivate: boolean;
+  isPrivate?: boolean;
 }) {
-  await verifyRepo(owner, repo);
+  const token = getAuthToken();
+  const config = readConfig();
 
-  const repos = readRepos();
-
-  const exists = repos.find((r: any) => r.owner === owner && r.repo === repo);
-
-  if (exists) {
-    throw new Error('Repository already connected');
+  if (!config.activeTeamId) {
+    throw new Error('No active team selected');
   }
 
-  repos.push({
-    owner,
-    repo,
-    private: isPrivate,
-    connectedAt: new Date().toISOString(),
+  const res = await axios.get(
+    `${GITHUB_API}/repos/${owner}/${repo}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+      },
+    }
+  );
+
+  const data = res.data;
+
+  return createRepo({
+    githubId: data.id,
+    name: data.name,
+    fullName: data.full_name,
+    private: data.private,
+    stars: data.stargazers_count,
+    forks: data.forks_count,
+    teamId: config.activeTeamId,
   });
-
-  writeRepos(repos);
 }
 
-//Disconnect repo
-
-export async function disconnectRepo(repoName: string) {
-  const repos = readRepos();
-
-  const filtered = repos.filter((r: any) => r.repo !== repoName);
-
-  writeRepos(filtered);
-}
-
-//List connected repos
+/**
+ * List repos of active team
+ */
 export async function listRepos() {
-  return readRepos();
+  const config = readConfig();
+
+  if (!config.activeTeamId) {
+    throw new Error('No active team selected');
+  }
+
+  return getReposByTeam(config.activeTeamId);
+}
+
+/**
+ * Disconnect repo from team
+ */
+export async function disconnectRepo(fullName: string) {
+  const config = readConfig();
+
+  if (!config.activeTeamId) {
+    throw new Error('No active team selected');
+  }
+
+  return deleteRepoByFullName(
+    config.activeTeamId,
+    fullName
+  );
 }

@@ -1,27 +1,36 @@
 import prisma from '../db/prisma';
 
-//create or update repo
-
-export async function upsertRepo(teamId: number, repoName: string) {
-  return prisma.repo.upsert({
-    where: {
-      teamId_name: {
-        teamId,
-        name: repoName,
-      },
-    },
-    update: {},
-    create: {
-      name: repoName,
-      teamId,
-    },
+export async function createRepo(data: {
+  githubId: number;
+  name: string;
+  fullName: string;
+  private: boolean;
+  stars: number;
+  forks: number;
+  teamId: number;
+}) {
+  return prisma.repo.create({
+    data,
   });
 }
-
-//get all repos of the team
 
 export async function getReposByTeam(teamId: number) {
   return prisma.repo.findMany({
     where: { teamId },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+export async function deleteRepoByFullName(
+  teamId: number,
+  fullName: string,
+) {
+  return prisma.repo.delete({
+    where: {
+      teamId_fullName: {
+        teamId: teamId,     // ✅ use function param
+        fullName: fullName // ✅ use function param
+      },
+    },
   });
 }
