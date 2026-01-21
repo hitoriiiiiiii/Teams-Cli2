@@ -13,6 +13,7 @@ import { addUsertoTeam } from '../controllers/team.controller';
 import prisma from '../db/prisma';
 import { ensureUserInTeam } from './team';
 import { getUserByUsername } from '../controllers/user.controller';
+import { getCommits, getCommit } from '../controllers/commits.controller';
 
 const program = new Command();
 
@@ -293,6 +294,58 @@ invite
   .description('List invites')
   .action(() => {
     console.log('📨 Listing invites...');
+  });
+//commits commands
+
+const commits = program.command('commits').description('Commits Management');
+
+commits
+  .command('list <owner> <repo>')
+  .description('List commits for a repository')
+  .option('-a, --author <author>', 'Filter commits by author')
+  .action(async (owner, repo, opts) => {
+    try {
+      const author = opts.author || undefined; // undefined = all authors
+      const commitList = await getCommits(owner, repo, author);
+
+      if (!commitList.length) {
+        console.log('No commits found.');
+        return;
+      }
+
+      console.log(`📄 Commits for ${owner}/${repo}:`);
+      commitList.forEach((c: any) =>
+        console.log(`- ${c.sha} | ${c.message} | ${c.author}`)
+      );
+    } catch (err) {
+      console.error('❌ Failed to fetch commits:', err);
+    }
+  });
+
+// Get a single commit by SHA
+commits
+  .command('get <owner> <repo> <sha>')
+  .description('Get details of a specific commit')
+  .action(async (owner, repo, sha) => {
+    try {
+      const commit = await getCommit(owner, repo, sha);
+
+      if (!commit) {
+        console.log(`❌ Commit ${sha} not found.`);
+        return;
+      }
+
+      console.log(`🔍 Commit ${sha} details:`);
+      console.log(`Author  : ${(commit as any).author || 'Unknown'}`);
+      console.log(`Message : ${commit.message}`);
+      console.log(`Date    : ${(commit as any).date || commit.createdAt}`);
+      console.log(
+        `Files   : ${(commit as any).files?.length ? (commit as any).files.join(', ') : 'Not available'}`
+      );
+      console.log(`Source  : ${commit.source}`);
+    } catch (err: any) {
+      console.error('❌ Failed to fetch commit:', err.message);
+    }
   });
 
 //Config commands
