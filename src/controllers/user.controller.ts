@@ -1,4 +1,4 @@
-import prisma from '../db/prisma';
+import prisma from "../db/prisma";
 
 type GitHubUser = {
   githubId: string;
@@ -24,7 +24,9 @@ export async function upsertGitHubUser(user: GitHubUser) {
   });
 }
 
-//get user by username 
+/**
+ * Get user by username
+ */
 export async function getUserByUsername(username: string) {
   return prisma.user.findFirst({
     where: { username },

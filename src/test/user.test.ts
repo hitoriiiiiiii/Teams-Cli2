@@ -38,10 +38,10 @@ describe("User model (Prisma)", () => {
     expect(user.email).toBe("test@example.com");
   });
 
-  it("should fetch user by email", async () => {
-    const user = await prisma.user.findUnique({
-      where: { githubId:"888888" }
-    });
+  it("should fetch user by username", async () => {
+    const user = await prisma.user.findFirst({
+  where: { username: "TEST_USER" },
+});
 
     expect(user).not.toBeNull();
     expect(user?.username).toBe("TEST_USER");
