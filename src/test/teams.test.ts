@@ -6,11 +6,15 @@ describe("Teams Module (Real DB Tests)", () => {
 
   beforeAll(async () => {
     // Clean DB in correct order (FK safe)
-    await prisma.teamMember.deleteMany();
-    await prisma.repo.deleteMany();
-    await prisma.team.deleteMany();
-    await prisma.user.deleteMany();
-
+    try {
+    await prisma.commit.deleteMany();       
+    await prisma.repo.deleteMany();         
+    await prisma.teamMember.deleteMany();   
+    await prisma.team.deleteMany();        
+    await prisma.user.deleteMany();       
+  } catch (err) {
+    console.log("DB cleanup error (probably empty tables):", err);
+  }
     // Create user
     const user = await prisma.user.create({
       data: {

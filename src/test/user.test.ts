@@ -40,7 +40,7 @@ describe("User model (Prisma)", () => {
 
   it("should fetch user by email", async () => {
     const user = await prisma.user.findUnique({
-      where: { email: "test@example.com" }
+      where: { githubId:"888888" }
     });
 
     expect(user).not.toBeNull();

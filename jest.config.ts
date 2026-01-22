@@ -5,7 +5,7 @@ const config: Config = {
   testEnvironment: "node",
   clearMocks: true,
   coverageDirectory: "coverage",
-  testMatch: ["**/__tests__/**/*.ts", "**/?(*.)+(spec|test).ts"],
+  testMatch: ["**/__test__/**/*.ts", "**/?(*.)+(spec|test).ts"],
   transform: {
     "^.+\\.tsx?$": [
       "ts-jest",
