@@ -44,8 +44,7 @@ jobs:
         run: npx prisma generate
 
       - name: Reset DB & apply schema
-        run: npx prisma migrate reset --force --skip-seed
-
+        run: npx prisma db push --accept-data-loss
 
       - name: Run tests
         run: npx jest --runInBand
