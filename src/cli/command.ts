@@ -1,4 +1,6 @@
 import { Command } from 'commander';
+import inquirer from 'inquirer';
+import chalk from 'chalk';
 import { showHelp } from './help';
 import { loginWithGithub, logoutUser, authStatus } from '../cli/auth';
 import { getGithubUser } from './github';
@@ -14,12 +16,24 @@ import prisma from '../db/prisma';
 import { ensureUserInTeam } from './team';
 import { getUserByUsername } from '../controllers/user.controller';
 import { getCommits, getCommit } from '../controllers/commits.controller';
+import { logger } from '../utils/logger';
+import { startSpinner, successSpinner } from '../utils/spinner';
+import {
+  askTeamName,
+  askGithubUsername,
+  askTeamId,
+  askUserId,
+  askRepoName,
+  askInviteCode,
+  askConfigKeyValue,
+  confirmAction,
+} from '../utils/inquirer';
 
 const program = new Command();
 
 program
-  .name('teams')
-  .description('Teams CLI - find, create and manage teams')
+  .name(chalk.cyan.bold('teams'))
+  .description(chalk.magenta('Teams CLI - find, create and manage teams'))
   .version('1.0.0');
 
 //Auth commands
@@ -43,9 +57,9 @@ program
   .description('Show current logged-in user')
   .action(() => {
     const user = getCurrentUser();
-    console.log('👤 Logged in as');
-    console.log(`ID       : ${user.id}`);
-    console.log(`Username : ${user.username}`);
+    logger.header('Current User Profile');
+    console.log(chalk.yellow('ID       :') + chalk.cyan.bold(` ${user.id}`));
+    console.log(chalk.yellow('Username :') + chalk.cyan.bold(` ${user.username}`));
   });
 
 //User commands'
@@ -64,16 +78,33 @@ user
   .description("Get another user's details")
   .option('-i, --id <id>', 'User ID')
   .option('-u, --username <username>', 'GitHub username')
-  .action((opts) => {
-    if (!opts.id && !opts.username) {
-      console.error('❌ Provide --id or --username');
-      process.exit(1);
+  .action(async (opts) => {
+    let userId = opts.id;
+    let username = opts.username;
+
+    if (!userId && !username) {
+      const choice = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'method',
+          message: 'How do you want to search for a user?',
+          choices: ['By Username', 'By User ID'],
+        },
+      ]);
+
+      if (choice.method === 'By Username') {
+        const { username: inputUsername } = await askGithubUsername();
+        username = inputUsername;
+      } else {
+        const { id } = await askUserId();
+        userId = id;
+      }
     }
 
-    if (opts.id) {
-      console.log(`Fetching user with ID ${opts.id}`);
+    if (userId) {
+      logger.info(`Fetching user with ID ${userId}`);
     } else {
-      console.log(`Fetching Github user ${opts.username}`);
+      logger.info(`Fetching GitHub user ${username}`);
     }
   });
 
@@ -85,74 +116,125 @@ team
   .command('create <name>')
   .description('Create a new team')
   .action(async (name: string) => {
-    const user = getCurrentUser();
-    const team = await createTeam(name, user.id);
-
-    console.log('✅ Team created');
-    console.log(`ID : ${team.id}`);
-    console.log(`Name: ${team.name}`);
+    const spinner = startSpinner(chalk.cyan(`Creating team "${name}"...`), 'cyan');
+    try {
+      const user = getCurrentUser();
+      const team = await createTeam(name, user.id);
+      spinner.succeed(chalk.green.bold(`✓ Team created successfully!`));
+      logger.title('Team Details');
+      console.log(chalk.yellow('ID  :') + chalk.cyan.bold(` ${team.id}`));
+      console.log(chalk.yellow('Name:') + chalk.cyan.bold(` ${team.name}`));
+    } catch (error) {
+      spinner.fail(chalk.red.bold('✗ Failed to create team'));
+      console.error(error);
+    }
   });
 
 team
   .command('list')
   .description('List all teams')
   .action(async () => {
-    const user = getCurrentUser();
-    const teams = await getTeamByUser(user.id);
+    const spinner = startSpinner(chalk.cyan('Fetching your teams...'), 'cyan');
+    try {
+      const user = getCurrentUser();
+      const teams = await getTeamByUser(user.id);
 
-    if (teams.length === 0) {
-      console.log('No teams found');
-      return;
+      if (teams.length === 0) {
+        spinner.warn(chalk.yellow.bold('No teams found'));
+        return;
+      }
+
+      spinner.succeed(chalk.green.bold(`Found ${teams.length} team(s)`));
+      logger.title('Your Teams');
+      teams.forEach((t, index) => {
+        console.log(
+          chalk.cyan(`${index + 1}.`) +
+          chalk.yellow(` [ID: ${t.team.id}]`) +
+          chalk.white(` ${t.team.name}`)
+        );
+      });
+    } catch (error) {
+      spinner.fail(chalk.red.bold('Failed to fetch teams'));
+      console.error(error);
     }
-
-    console.log('Your Teams:');
-    teams.forEach((t) => {
-      console.log(`ID: ${t.team.id} | Name: ${t.team.name}`);
-    });
   });
 
 team
   .command('get')
   .description('Get team details')
   .option('-i, --id <id>', 'Team ID')
-  .action((opts) => {
-    if (!opts.id) {
-      console.error('❌ Team ID required');
-      process.exit(1);
+  .action(async (opts) => {
+    let teamId = opts.id;
+
+    if (!teamId) {
+      const { id } = await askTeamId();
+      teamId = id;
     }
-    console.log(`Fetching team ${opts.id}`);
+
+    logger.info(`Fetching team ${teamId}`);
   });
 
 team
   .command('delete')
   .description('Delete a team')
   .option('-i, --id <id>', 'Team ID')
-  .action((opts) => {
-    if (!opts.id) {
-      console.error('❌ Team ID required');
-      process.exit(1);
+  .action(async (opts) => {
+    let teamId = opts.id;
+
+    if (!teamId) {
+      const { id } = await askTeamId();
+      teamId = id;
     }
-    console.log(`🗑️ Team ${opts.id} deleted`);
+
+    const confirmed = await confirmAction(
+      chalk.yellow.bold(`⚠️  Are you sure you want to delete team ${teamId}?`)
+    );
+
+    if (!confirmed) {
+      logger.warning('Team deletion cancelled');
+      return;
+    }
+
+    logger.success(`Team ${teamId} deleted`);
   });
 
 team
   .command('join')
   .description('Join a team')
   .option('-i, --id <id>', 'Team ID')
-  .action((opts) => {
-    console.log(`🤝 Joined team ${opts.id}`);
+  .action(async (opts) => {
+    let teamId = opts.id;
+
+    if (!teamId) {
+      const { id } = await askTeamId();
+      teamId = id;
+    }
+
+    logger.success(`🤝 Joined team ${teamId}`);
   });
 
 team
   .command('leave')
   .description('Leave a team')
   .option('-i, --id <id>', 'Team ID')
-  .action((opts) => {
-    if (!opts.id) {
-      console.error('❌ Team ID required');
-      process.exit(1);
+  .action(async (opts) => {
+    let teamId = opts.id;
+
+    if (!teamId) {
+      const { id } = await askTeamId();
+      teamId = id;
     }
-    console.log(`👋 Left team ${opts.id}`);
+
+    const confirmed = await confirmAction(
+      chalk.yellow.bold(`⚠️  Are you sure you want to leave team ${teamId}?`)
+    );
+
+    if (!confirmed) {
+      logger.warning('Leave team cancelled');
+      return;
+    }
+
+    logger.success(`👋 Left team ${teamId}`);
   });
 
 //Member commands
@@ -165,25 +247,42 @@ member
   .option('-t, --team <id>', 'Team ID')
   .option('-u, --username <username>', 'GitHub username')
   .action(async (opts) => {
-    if (!opts.team || !opts.username) {
-      console.error('❌ teamId and username required');
-      process.exit(1);
+    let teamId = opts.team;
+    let username = opts.username;
+
+    if (!teamId) {
+      const { id } = await askTeamId();
+      teamId = id;
     }
 
-    const user = getCurrentUser();
-    const teamId = Number(opts.team);
-    const targetUser = await getUserByUsername(opts.username);
-
-    await ensureUserInTeam(user.id, teamId);
-
-    if (!targetUser) {
-      console.error('❌ User not found');
-      return;
+    if (!username) {
+      const { username: inputUsername } = await askGithubUsername();
+      username = inputUsername;
     }
 
-    await addUsertoTeam(targetUser.id, teamId);
+    const spinner = startSpinner(
+      chalk.cyan(`Adding ${chalk.bold(username)} to team...`),
+      'cyan'
+    );
 
-    console.log(`✅ ${opts.username} added to team ${teamId}`);
+    try {
+      const user = getCurrentUser();
+      const teamIdNum = Number(teamId);
+      const targetUser = await getUserByUsername(username);
+
+      await ensureUserInTeam(user.id, teamIdNum);
+
+      if (!targetUser) {
+        spinner.fail(chalk.red.bold('User not found'));
+        return;
+      }
+
+      await addUsertoTeam(targetUser.id, teamIdNum);
+      spinner.succeed(chalk.green.bold(`✓ ${username} added to team ${teamIdNum}`));
+    } catch (error) {
+      spinner.fail(chalk.red.bold('Failed to add member'));
+      console.error(error);
+    }
   });
 
 member
@@ -191,16 +290,46 @@ member
   .description('Remove a member from team')
   .option('-t, --team <id>', 'Team ID')
   .option('-u, --username <username>', 'GitHub username')
-  .action((opts) => {
-    console.log(`➖ Removed ${opts.username} from team ${opts.team}`);
+  .action(async (opts) => {
+    let teamId = opts.team;
+    let username = opts.username;
+
+    if (!teamId) {
+      const { id } = await askTeamId();
+      teamId = id;
+    }
+
+    if (!username) {
+      const { username: inputUsername } = await askGithubUsername();
+      username = inputUsername;
+    }
+
+    const confirmed = await confirmAction(
+      chalk.yellow.bold(`⚠️  Remove ${username} from team ${teamId}?`)
+    );
+
+    if (!confirmed) {
+      logger.warning('Remove member cancelled');
+      return;
+    }
+
+    logger.success(`➖ Removed ${username} from team ${teamId}`);
   });
 
 member
   .command('list')
   .description('List team members')
   .option('-t, --team <id>', 'Team ID')
-  .action((opts) => {
-    console.log(`👥 Listing members of team ${opts.team}`);
+  .action(async (opts) => {
+    let teamId = opts.team;
+
+    if (!teamId) {
+      const { id } = await askTeamId();
+      teamId = id;
+    }
+
+    logger.title(`👥 Team ${teamId} Members`);
+    console.log(chalk.cyan('Listing members...'));
   });
 
 // Repositories commands
@@ -210,61 +339,110 @@ repo
   .command('add <teamName> <repoName>')
   .description('Add a repo to a team')
   .action(async (teamName, repoName) => {
-    const user = getCurrentUser();
+    const spinner = startSpinner(
+      chalk.cyan(`Adding repository "${repoName}" to team "${teamName}"...`),
+      'cyan'
+    );
 
-    // CLI handles GitHub fullName and other repo info
-    const team = await prisma.team.findFirst({ where: { name: teamName } });
-    if (!team) return console.error('❌ Team not found');
+    try {
+      const user = getCurrentUser();
 
-    const repoData = {
-      githubId: 0, // placeholder
-      name: repoName,
-      fullName: `${user.username}/${repoName}`,
-      private: false,
-      stars: 0,
-      forks: 0,
-      teamId: team.id,
-    };
+      const team = await prisma.team.findFirst({ where: { name: teamName } });
+      if (!team) {
+        spinner.fail(chalk.red.bold('Team not found'));
+        return;
+      }
 
-    await createRepo(repoData); // controller only gets clean object
-    console.log(`✅ Repo ${repoName} added to team ${teamName}`);
+      const repoData = {
+        githubId: 0,
+        name: repoName,
+        fullName: `${user.username}/${repoName}`,
+        private: false,
+        stars: 0,
+        forks: 0,
+        teamId: team.id,
+      };
+
+      await createRepo(repoData);
+      spinner.succeed(chalk.green.bold(`✓ Repo added successfully!`));
+      console.log(chalk.yellow('Repository:') + chalk.cyan.bold(` ${repoName}`));
+      console.log(chalk.yellow('Team      :') + chalk.cyan.bold(` ${teamName}`));
+    } catch (error) {
+      spinner.fail(chalk.red.bold('Failed to add repository'));
+      console.error(error);
+    }
   });
 
 repo
   .command('list <teamName>')
   .description('List all repos of a team')
   .action(async (teamName) => {
-    const team = await prisma.team.findFirst({
-      where: { name: teamName },
-    });
+    const spinner = startSpinner(chalk.cyan(`Fetching repositories for "${teamName}"...`), 'cyan');
 
-    if (!team) {
-      console.error('❌ Team not found');
-      return;
+    try {
+      const team = await prisma.team.findFirst({
+        where: { name: teamName },
+      });
+
+      if (!team) {
+        spinner.fail(chalk.red.bold('Team not found'));
+        return;
+      }
+
+      const repos = await getReposByTeam(team.id);
+
+      if (!repos.length) {
+        spinner.warn(chalk.yellow.bold('No repositories found'));
+        return;
+      }
+
+      spinner.succeed(chalk.green.bold(`Found ${repos.length} repository/ies`));
+      logger.title(`Repositories in "${teamName}"`);
+      repos.forEach((r, index) => {
+        console.log(chalk.cyan(`${index + 1}.`) + chalk.white(` ${r.name}`));
+      });
+    } catch (error) {
+      spinner.fail(chalk.red.bold('Failed to fetch repositories'));
+      console.error(error);
     }
-
-    const repos = await getReposByTeam(team.id);
-
-    if (!repos.length) {
-      console.log('No repos found');
-      return;
-    }
-
-    console.log(`Repos in ${teamName}:`);
-    repos.forEach((r) => {
-      console.log(`- ${r.name}`);
-    });
   });
 
 repo
   .command('remove <teamName> <repoName>')
   .description('Remove a repo from a team')
   .action(async (teamName, repoName) => {
-    const team = await prisma.team.findFirst({ where: { name: teamName } });
-    if (!team) return console.error('❌ Team not found');
+    let finalTeamName = teamName;
+    let finalRepoName = repoName;
 
-    await deleteRepoByFullName(team.id, `${teamName}/${repoName}`);
-    console.log(`🗑️ Repo ${repoName} removed from team ${teamName}`);
+    if (!teamName) {
+      const { name } = await askTeamName();
+      finalTeamName = name;
+    }
+
+    if (!repoName) {
+      const { name } = await askRepoName();
+      finalRepoName = name;
+    }
+
+    const confirmed = await confirmAction(
+      chalk.yellow.bold(
+        `⚠️  Remove repository "${finalRepoName}" from team "${finalTeamName}"?`
+      )
+    );
+
+    if (!confirmed) {
+      logger.warning('Repository removal cancelled');
+      return;
+    }
+
+    const team = await prisma.team.findFirst({ where: { name: finalTeamName } });
+    if (!team) {
+      logger.error('Team not found');
+      return;
+    }
+
+    await deleteRepoByFullName(team.id, `${finalTeamName}/${finalRepoName}`);
+    logger.success(`🗑️ Repo ${finalRepoName} removed from team ${finalTeamName}`);
   });
 
 
@@ -277,16 +455,36 @@ invite
   .description('Send team invite')
   .option('-t, --team <id>', 'Team ID')
   .option('-u, --username <username>', 'GitHub username')
-  .action((opts) => {
-    console.log(`📨 Invite sent to ${opts.username}`);
+  .action(async (opts) => {
+    let teamId = opts.team;
+    let username = opts.username;
+
+    if (!teamId) {
+      const { id } = await askTeamId();
+      teamId = id;
+    }
+
+    if (!username) {
+      const { username: inputUsername } = await askGithubUsername();
+      username = inputUsername;
+    }
+
+    logger.success(`📨 Invite sent to ${username}`);
   });
 
 invite
   .command('accept')
   .description('Accept an invite')
   .option('-c, --code <code>', 'Invite code')
-  .action((opts) => {
-    console.log(`✅ Invite ${opts.code} accepted`);
+  .action(async (opts) => {
+    let code = opts.code;
+
+    if (!code) {
+      const { code: inputCode } = await askInviteCode();
+      code = inputCode;
+    }
+
+    logger.success(`✅ Invite ${code} accepted`);
   });
 
 invite
@@ -304,21 +502,30 @@ commits
   .description('List commits for a repository')
   .option('-a, --author <author>', 'Filter commits by author')
   .action(async (owner, repo, opts) => {
+    const spinner = startSpinner(
+      chalk.cyan(`Fetching commits for ${owner}/${repo}...`),
+      'cyan'
+    );
+
     try {
-      const author = opts.author || undefined; // undefined = all authors
+      const author = opts.author || undefined;
       const commitList = await getCommits(owner, repo, author);
 
       if (!commitList.length) {
-        console.log('No commits found.');
+        spinner.warn(chalk.yellow.bold('No commits found'));
         return;
       }
 
-      console.log(`📄 Commits for ${owner}/${repo}:`);
-      commitList.forEach((c: any) =>
-        console.log(`- ${c.sha} | ${c.message} | ${c.author}`)
-      );
+      spinner.succeed(chalk.green.bold(`Found ${commitList.length} commit(s)`));
+      logger.title(`Commits for ${owner}/${repo}`);
+      commitList.forEach((c: any, index: number) => {
+        console.log(chalk.cyan(`${index + 1}.`) + chalk.white(` ${c.sha.substring(0, 7)}`));
+        console.log(chalk.dim(`   Message: ${c.message}`));
+        console.log(chalk.dim(`   Author : ${c.author}`));
+      });
     } catch (err) {
-      console.error('❌ Failed to fetch commits:', err);
+      spinner.fail(chalk.red.bold('Failed to fetch commits'));
+      console.error(err);
     }
   });
 
@@ -327,24 +534,26 @@ commits
   .command('get <owner> <repo> <sha>')
   .description('Get details of a specific commit')
   .action(async (owner, repo, sha) => {
+    const spinner = startSpinner(chalk.cyan(`Fetching commit ${sha.substring(0, 7)}...`), 'cyan');
+
     try {
       const commit = await getCommit(owner, repo, sha);
 
       if (!commit) {
-        console.log(`❌ Commit ${sha} not found.`);
+        spinner.fail(chalk.red.bold(`Commit ${sha} not found`));
         return;
       }
 
-      console.log(`🔍 Commit ${sha} details:`);
-      console.log(`Author  : ${(commit as any).author || 'Unknown'}`);
-      console.log(`Message : ${commit.message}`);
-      console.log(`Date    : ${(commit as any).date || commit.createdAt}`);
-      console.log(
-        `Files   : ${(commit as any).files?.length ? (commit as any).files.join(', ') : 'Not available'}`
-      );
-      console.log(`Source  : ${commit.source}`);
+      spinner.succeed(chalk.green.bold(`✓ Commit found`));
+      logger.header(`Commit Details: ${sha.substring(0, 7)}`);
+      console.log(chalk.yellow('Author  :') + chalk.cyan.bold(` ${(commit as any).author || 'Unknown'}`));
+      console.log(chalk.yellow('Message :') + chalk.cyan.bold(` ${commit.message}`));
+      console.log(chalk.yellow('Date    :') + chalk.cyan.bold(` ${(commit as any).date || commit.createdAt}`));
+      console.log(chalk.yellow('Files   :') + chalk.cyan.bold(` ${(commit as any).files?.length ? (commit as any).files.join(', ') : 'Not available'}`));
+      console.log(chalk.yellow('Source  :') + chalk.cyan.bold(` ${commit.source}`));
     } catch (err: any) {
-      console.error('❌ Failed to fetch commit:', err.message);
+      spinner.fail(chalk.red.bold('Failed to fetch commit'));
+      console.error(err.message);
     }
   });
 
@@ -357,16 +566,40 @@ config
   .description('Set config value')
   .option('-k, --key <key>', 'Config key')
   .option('-v, --value <value>', 'Config value')
-  .action((opts) => {
-    console.log(`⚙️ Set ${opts.key}=${opts.value}`);
+  .action(async (opts) => {
+    let key = opts.key;
+    let value = opts.value;
+
+    if (!key || !value) {
+      const { key: inputKey, value: inputValue } = await askConfigKeyValue();
+      key = inputKey;
+      value = inputValue;
+    }
+
+    logger.success(`⚙️ Set ${key}=${value}`);
   });
 
 config
   .command('get')
   .description('Get config value')
   .option('-k, --key <key>', 'Config key')
-  .action((opts) => {
-    console.log(`⚙️ ${opts.key}=value`);
+  .action(async (opts) => {
+    let key = opts.key;
+
+    if (!key) {
+      const { name } = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'name',
+          message: 'Config key:',
+          validate: (input: string) =>
+            input.trim() !== '' || 'Config key cannot be empty',
+        },
+      ]);
+      key = name;
+    }
+
+    logger.info(`⚙️ ${key}=value`);
   });
 
 config
@@ -382,14 +615,20 @@ program
   .command('init')
   .description('Initialize Teams CLI project')
   .action(() => {
-    console.log('🚀 Teams project initialized');
+    logger.header('Teams CLI Initialization');
+    const spinner = startSpinner(chalk.cyan('Initializing Teams project...'), 'cyan');
+    setTimeout(() => {
+      spinner.succeed(chalk.green.bold('✓ Teams project initialized'));
+    }, 1000);
   });
 
 program
   .command('status')
   .description('Check CLI status')
   .action(() => {
-    console.log('🟢 CLI is working fine');
+    logger.title('CLI Status');
+    console.log(chalk.green.bold('●') + chalk.green(' CLI is working fine'));
+    console.log(chalk.green('✓ All systems operational'));
   });
 
 //Help commands
