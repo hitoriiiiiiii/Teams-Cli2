@@ -13,7 +13,7 @@ interface AuthData {
     username: string;
     email: string | null;
   };
-   activeTeamId?: number;
+  activeTeamId?: number;
 }
 
 export function readConfig(): AuthData {

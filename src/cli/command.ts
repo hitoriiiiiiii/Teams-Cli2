@@ -59,7 +59,9 @@ program
     const user = getCurrentUser();
     logger.header('Current User Profile');
     console.log(chalk.yellow('ID       :') + chalk.cyan.bold(` ${user.id}`));
-    console.log(chalk.yellow('Username :') + chalk.cyan.bold(` ${user.username}`));
+    console.log(
+      chalk.yellow('Username :') + chalk.cyan.bold(` ${user.username}`),
+    );
   });
 
 //User commands'
@@ -116,7 +118,10 @@ team
   .command('create <name>')
   .description('Create a new team')
   .action(async (name: string) => {
-    const spinner = startSpinner(chalk.cyan(`Creating team "${name}"...`), 'cyan');
+    const spinner = startSpinner(
+      chalk.cyan(`Creating team "${name}"...`),
+      'cyan',
+    );
     try {
       const user = getCurrentUser();
       const team = await createTeam(name, user.id);
@@ -146,11 +151,11 @@ team
 
       spinner.succeed(chalk.green.bold(`Found ${teams.length} team(s)`));
       logger.title('Your Teams');
-      teams.forEach((t, index) => {
+      teams.forEach((t: any, index: number) => {
         console.log(
           chalk.cyan(`${index + 1}.`) +
-          chalk.yellow(` [ID: ${t.team.id}]`) +
-          chalk.white(` ${t.team.name}`)
+            chalk.yellow(` [ID: ${t.team.id}]`) +
+            chalk.white(` ${t.team.name}`),
         );
       });
     } catch (error) {
@@ -187,7 +192,7 @@ team
     }
 
     const confirmed = await confirmAction(
-      chalk.yellow.bold(`⚠️  Are you sure you want to delete team ${teamId}?`)
+      chalk.yellow.bold(`⚠️  Are you sure you want to delete team ${teamId}?`),
     );
 
     if (!confirmed) {
@@ -226,7 +231,7 @@ team
     }
 
     const confirmed = await confirmAction(
-      chalk.yellow.bold(`⚠️  Are you sure you want to leave team ${teamId}?`)
+      chalk.yellow.bold(`⚠️  Are you sure you want to leave team ${teamId}?`),
     );
 
     if (!confirmed) {
@@ -262,7 +267,7 @@ member
 
     const spinner = startSpinner(
       chalk.cyan(`Adding ${chalk.bold(username)} to team...`),
-      'cyan'
+      'cyan',
     );
 
     try {
@@ -278,7 +283,9 @@ member
       }
 
       await addUsertoTeam(targetUser.id, teamIdNum);
-      spinner.succeed(chalk.green.bold(`✓ ${username} added to team ${teamIdNum}`));
+      spinner.succeed(
+        chalk.green.bold(`✓ ${username} added to team ${teamIdNum}`),
+      );
     } catch (error) {
       spinner.fail(chalk.red.bold('Failed to add member'));
       console.error(error);
@@ -305,7 +312,7 @@ member
     }
 
     const confirmed = await confirmAction(
-      chalk.yellow.bold(`⚠️  Remove ${username} from team ${teamId}?`)
+      chalk.yellow.bold(`⚠️  Remove ${username} from team ${teamId}?`),
     );
 
     if (!confirmed) {
@@ -341,7 +348,7 @@ repo
   .action(async (teamName, repoName) => {
     const spinner = startSpinner(
       chalk.cyan(`Adding repository "${repoName}" to team "${teamName}"...`),
-      'cyan'
+      'cyan',
     );
 
     try {
@@ -365,8 +372,12 @@ repo
 
       await createRepo(repoData);
       spinner.succeed(chalk.green.bold(`✓ Repo added successfully!`));
-      console.log(chalk.yellow('Repository:') + chalk.cyan.bold(` ${repoName}`));
-      console.log(chalk.yellow('Team      :') + chalk.cyan.bold(` ${teamName}`));
+      console.log(
+        chalk.yellow('Repository:') + chalk.cyan.bold(` ${repoName}`),
+      );
+      console.log(
+        chalk.yellow('Team      :') + chalk.cyan.bold(` ${teamName}`),
+      );
     } catch (error) {
       spinner.fail(chalk.red.bold('Failed to add repository'));
       console.error(error);
@@ -377,7 +388,10 @@ repo
   .command('list <teamName>')
   .description('List all repos of a team')
   .action(async (teamName) => {
-    const spinner = startSpinner(chalk.cyan(`Fetching repositories for "${teamName}"...`), 'cyan');
+    const spinner = startSpinner(
+      chalk.cyan(`Fetching repositories for "${teamName}"...`),
+      'cyan',
+    );
 
     try {
       const team = await prisma.team.findFirst({
@@ -398,7 +412,7 @@ repo
 
       spinner.succeed(chalk.green.bold(`Found ${repos.length} repository/ies`));
       logger.title(`Repositories in "${teamName}"`);
-      repos.forEach((r, index) => {
+      repos.forEach((r: any, index: number) => {
         console.log(chalk.cyan(`${index + 1}.`) + chalk.white(` ${r.name}`));
       });
     } catch (error) {
@@ -426,8 +440,8 @@ repo
 
     const confirmed = await confirmAction(
       chalk.yellow.bold(
-        `⚠️  Remove repository "${finalRepoName}" from team "${finalTeamName}"?`
-      )
+        `⚠️  Remove repository "${finalRepoName}" from team "${finalTeamName}"?`,
+      ),
     );
 
     if (!confirmed) {
@@ -435,16 +449,19 @@ repo
       return;
     }
 
-    const team = await prisma.team.findFirst({ where: { name: finalTeamName } });
+    const team = await prisma.team.findFirst({
+      where: { name: finalTeamName },
+    });
     if (!team) {
       logger.error('Team not found');
       return;
     }
 
     await deleteRepoByFullName(team.id, `${finalTeamName}/${finalRepoName}`);
-    logger.success(`🗑️ Repo ${finalRepoName} removed from team ${finalTeamName}`);
+    logger.success(
+      `🗑️ Repo ${finalRepoName} removed from team ${finalTeamName}`,
+    );
   });
-
 
 //Invite commands
 
@@ -504,7 +521,7 @@ commits
   .action(async (owner, repo, opts) => {
     const spinner = startSpinner(
       chalk.cyan(`Fetching commits for ${owner}/${repo}...`),
-      'cyan'
+      'cyan',
     );
 
     try {
@@ -519,7 +536,10 @@ commits
       spinner.succeed(chalk.green.bold(`Found ${commitList.length} commit(s)`));
       logger.title(`Commits for ${owner}/${repo}`);
       commitList.forEach((c: any, index: number) => {
-        console.log(chalk.cyan(`${index + 1}.`) + chalk.white(` ${c.sha.substring(0, 7)}`));
+        console.log(
+          chalk.cyan(`${index + 1}.`) +
+            chalk.white(` ${c.sha.substring(0, 7)}`),
+        );
         console.log(chalk.dim(`   Message: ${c.message}`));
         console.log(chalk.dim(`   Author : ${c.author}`));
       });
@@ -534,7 +554,10 @@ commits
   .command('get <owner> <repo> <sha>')
   .description('Get details of a specific commit')
   .action(async (owner, repo, sha) => {
-    const spinner = startSpinner(chalk.cyan(`Fetching commit ${sha.substring(0, 7)}...`), 'cyan');
+    const spinner = startSpinner(
+      chalk.cyan(`Fetching commit ${sha.substring(0, 7)}...`),
+      'cyan',
+    );
 
     try {
       const commit = await getCommit(owner, repo, sha);
@@ -546,11 +569,26 @@ commits
 
       spinner.succeed(chalk.green.bold(`✓ Commit found`));
       logger.header(`Commit Details: ${sha.substring(0, 7)}`);
-      console.log(chalk.yellow('Author  :') + chalk.cyan.bold(` ${(commit as any).author || 'Unknown'}`));
-      console.log(chalk.yellow('Message :') + chalk.cyan.bold(` ${commit.message}`));
-      console.log(chalk.yellow('Date    :') + chalk.cyan.bold(` ${(commit as any).date || commit.createdAt}`));
-      console.log(chalk.yellow('Files   :') + chalk.cyan.bold(` ${(commit as any).files?.length ? (commit as any).files.join(', ') : 'Not available'}`));
-      console.log(chalk.yellow('Source  :') + chalk.cyan.bold(` ${commit.source}`));
+      console.log(
+        chalk.yellow('Author  :') +
+          chalk.cyan.bold(` ${(commit as any).author || 'Unknown'}`),
+      );
+      console.log(
+        chalk.yellow('Message :') + chalk.cyan.bold(` ${commit.message}`),
+      );
+      console.log(
+        chalk.yellow('Date    :') +
+          chalk.cyan.bold(` ${(commit as any).date || commit.createdAt}`),
+      );
+      console.log(
+        chalk.yellow('Files   :') +
+          chalk.cyan.bold(
+            ` ${(commit as any).files?.length ? (commit as any).files.join(', ') : 'Not available'}`,
+          ),
+      );
+      console.log(
+        chalk.yellow('Source  :') + chalk.cyan.bold(` ${commit.source}`),
+      );
     } catch (err: any) {
       spinner.fail(chalk.red.bold('Failed to fetch commit'));
       console.error(err.message);
@@ -616,7 +654,10 @@ program
   .description('Initialize Teams CLI project')
   .action(() => {
     logger.header('Teams CLI Initialization');
-    const spinner = startSpinner(chalk.cyan('Initializing Teams project...'), 'cyan');
+    const spinner = startSpinner(
+      chalk.cyan('Initializing Teams project...'),
+      'cyan',
+    );
     setTimeout(() => {
       spinner.succeed(chalk.green.bold('✓ Teams project initialized'));
     }, 1000);

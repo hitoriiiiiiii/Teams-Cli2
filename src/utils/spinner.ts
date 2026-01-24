@@ -1,7 +1,10 @@
 import ora from 'ora';
 import chalk from 'chalk';
 
-export function startSpinner(text: string, color: 'cyan' | 'blue' | 'green' | 'yellow' = 'cyan') {
+export function startSpinner(
+  text: string,
+  color: 'cyan' | 'blue' | 'green' | 'yellow' = 'cyan',
+) {
   return ora({
     text: chalk[color](text),
     spinner: {

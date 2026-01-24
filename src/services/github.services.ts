@@ -27,15 +27,12 @@ export async function connectRepo({
     throw new Error('No active team selected');
   }
 
-  const res = await axios.get(
-    `${GITHUB_API}/repos/${owner}/${repo}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github+json',
-      },
-    }
-  );
+  const res = await axios.get(`${GITHUB_API}/repos/${owner}/${repo}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+    },
+  });
 
   const data = res.data;
 
@@ -73,8 +70,5 @@ export async function disconnectRepo(fullName: string) {
     throw new Error('No active team selected');
   }
 
-  return deleteRepoByFullName(
-    config.activeTeamId,
-    fullName
-  );
+  return deleteRepoByFullName(config.activeTeamId, fullName);
 }

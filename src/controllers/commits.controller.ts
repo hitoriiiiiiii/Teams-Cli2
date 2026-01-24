@@ -14,7 +14,7 @@ export interface GitHubCommit {
 export async function getCommits(
   owner: string,
   repo: string,
-  author?: string
+  author?: string,
 ): Promise<GitHubCommit[]> {
   try {
     const url = `https://api.github.com/repos/${owner}/${repo}/commits${
@@ -36,11 +36,7 @@ export async function getCommits(
 }
 
 // Fetch a single commit, first from DB, then GitHub if not found
-export async function getCommit(
-  owner: string,
-  repo: string,
-  sha: string
-) {
+export async function getCommit(owner: string, repo: string, sha: string) {
   try {
     // 1. Try DB
     let commit = await prisma.commit.findUnique({ where: { sha } });

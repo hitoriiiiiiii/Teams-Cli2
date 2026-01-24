@@ -24,11 +24,16 @@ export const logger = {
   header: (message: string) => {
     const padding = '═'.repeat(message.length + 4);
     console.log(chalk.magenta(padding));
-    console.log(chalk.magenta('║ ') + chalk.magenta.bold(message) + chalk.magenta(' ║'));
+    console.log(
+      chalk.magenta('║ ') + chalk.magenta.bold(message) + chalk.magenta(' ║'),
+    );
     console.log(chalk.magenta(padding));
   },
 
-  highlight: (message: string, color: 'cyan' | 'yellow' | 'green' | 'blue' = 'cyan') => {
+  highlight: (
+    message: string,
+    color: 'cyan' | 'yellow' | 'green' | 'blue' = 'cyan',
+  ) => {
     console.log(chalk[color].bold(message));
   },
 
@@ -39,7 +44,9 @@ export const logger = {
   },
 
   table: (headers: string[], rows: string[][]) => {
-    const headerLine = headers.map((h) => chalk.cyan.bold(h)).join(chalk.gray(' | '));
+    const headerLine = headers
+      .map((h) => chalk.cyan.bold(h))
+      .join(chalk.gray(' | '));
     console.log(headerLine);
     console.log(chalk.gray('─'.repeat(headerLine.length)));
     rows.forEach((row) => {

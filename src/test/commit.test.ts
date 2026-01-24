@@ -1,11 +1,11 @@
-import prisma from "../db/prisma";
+import prisma from '../db/prisma';
 
-describe("Commit Module (Prisma Integration Tests)", () => {
+describe('Commit Module (Prisma Integration Tests)', () => {
   let userId: number;
   let teamId: number;
   let repoId: number;
-  let commitId1: number;
-  let commitId2: number;
+  let commitId1: number | undefined;
+  let commitId2: number | undefined;
 
   beforeAll(async () => {
     // Clean DB in FK-safe order
@@ -17,15 +17,15 @@ describe("Commit Module (Prisma Integration Tests)", () => {
 
     const user = await prisma.user.create({
       data: {
-        githubId: "commit_user_001",
-        username: "COMMIT_USER",
-        email: "commituser@test.com",
+        githubId: 'commit_user_001',
+        username: 'COMMIT_USER',
+        email: 'commituser@test.com',
       },
     });
     userId = user.id;
 
     const team = await prisma.team.create({
-      data: { name: "Commit Team" },
+      data: { name: 'Commit Team' },
     });
     teamId = team.id;
 
@@ -35,32 +35,32 @@ describe("Commit Module (Prisma Integration Tests)", () => {
 
     const repo = await prisma.repo.create({
       data: {
-        name: "Commit Repo",
-        fullName: "Commit Team/Commit Repo",
+        name: 'Commit Repo',
+        fullName: 'Commit Team/Commit Repo',
         githubId: 5555,
         teamId,
         stars: 5,
         forks: 1,
         private: false,
-        language: "TypeScript",
+        language: 'TypeScript',
       },
     });
     repoId = repo.id;
   });
 
-  it("should create multiple commits for repo", async () => {
+  it('should create multiple commits for repo', async () => {
     const commit1 = await prisma.commit.create({
       data: {
-        message: "Initial commit",
-        sha: "sha123",
+        message: 'Initial commit',
+        sha: 'sha123',
         repoId,
       },
     });
 
     const commit2 = await prisma.commit.create({
       data: {
-        message: "Added README",
-        sha: "sha456",
+        message: 'Added README',
+        sha: 'sha456',
         repoId,
       },
     });
@@ -72,35 +72,37 @@ describe("Commit Module (Prisma Integration Tests)", () => {
     expect(commit2.repoId).toBe(repoId);
   });
 
-  it("should fetch all commits of a repo", async () => {
+  it('should fetch all commits of a repo', async () => {
     const commits = await prisma.commit.findMany({
       where: { repoId },
-      orderBy: { id: "asc" },
+      orderBy: { id: 'asc' },
     });
 
     expect(commits.length).toBe(2);
-    expect(commits[0].message).toBe("Initial commit");
-    expect(commits[1].message).toBe("Added README");
+    expect(commits[0].message).toBe('Initial commit');
+    expect(commits[1].message).toBe('Added README');
   });
 
-  it("should not allow duplicate SHA", async () => {
+  it('should not allow duplicate SHA', async () => {
     await expect(
       prisma.commit.create({
         data: {
-          message: "Duplicate SHA commit",
-          sha: "sha123",
+          message: 'Duplicate SHA commit',
+          sha: 'sha123',
           repoId,
         },
-      })
+      }),
     ).rejects.toThrow();
   });
 
-  it("should delete commits", async () => {
-    await prisma.commit.deleteMany({
-      where: { id: { in: [commitId1, commitId2] } },
-    });
+  it('should delete commits', async () => {
+    if (commitId1 && commitId2) {
+      await prisma.commit.deleteMany({
+        where: { id: { in: [commitId1, commitId2] } },
+      });
 
-    const commits = await prisma.commit.findMany({ where: { repoId } });
-    expect(commits.length).toBe(0);
+      const commits = await prisma.commit.findMany({ where: { repoId } });
+      expect(commits.length).toBe(0);
+    }
   });
 });

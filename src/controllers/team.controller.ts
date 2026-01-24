@@ -3,16 +3,31 @@ import prisma from '../db/prisma';
 //Create a team and add owner as member
 
 export async function createTeam(teamName: string, ownerUserId: number) {
-  return prisma.team.create({
+  // First, ensure the user exists in the database
+  const user = await prisma.user.findUnique({
+    where: { id: ownerUserId },
+  });
+
+  if (!user) {
+    throw new Error(`User with ID ${ownerUserId} does not exist`);
+  }
+
+  // Create the team
+  const team = await prisma.team.create({
     data: {
       name: teamName,
-      members: {
-        create: {
-          userId: ownerUserId,
-        },
-      },
     },
   });
+
+  // Add owner as a member
+  await prisma.teamMember.create({
+    data: {
+      userId: ownerUserId,
+      teamId: team.id,
+    },
+  });
+
+  return team;
 }
 
 //add users to team
@@ -39,7 +54,7 @@ export async function getTeamByUser(userId: number) {
 
 export async function getTeamByName(name: string) {
   return prisma.team.findMany({
-    where: { name }
+    where: { name },
   });
 }
 

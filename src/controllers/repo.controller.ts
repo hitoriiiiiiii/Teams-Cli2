@@ -23,17 +23,11 @@ export async function getReposByTeam(teamId: number) {
   });
 }
 
-// Delete a repository by team + fullName
-export async function deleteRepoByFullName(
-  teamId: number,
-  fullName: string
-) {
+// Delete a repository by fullName
+export async function deleteRepoByFullName(teamId: number, fullName: string) {
   return prisma.repo.delete({
     where: {
-      teamId_fullName: {
-        teamId,
-        fullName,
-      },
+      fullName,
     },
   });
 }
