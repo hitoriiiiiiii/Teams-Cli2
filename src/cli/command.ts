@@ -42,6 +42,7 @@ program
   .command('login')
   .description('Login to Teams CLI')
   .action(async () => {
+    await loginWithGithub();
     await getGithubUser();
   });
 
@@ -115,16 +116,23 @@ user
 const team = program.command('team').description('Team Management');
 
 team
-  .command('create <name>')
+  .command('create [name]')
   .description('Create a new team')
-  .action(async (name: string) => {
+  .action(async (name?: string) => {
+    let finalName = name;
+
+    if (!finalName) {
+      const { name: inputName } = await askTeamName();
+      finalName = inputName;
+    }
+
     const spinner = startSpinner(
-      chalk.cyan(`Creating team "${name}"...`),
+      chalk.cyan(`Creating team "${finalName}"...`),
       'cyan',
     );
     try {
       const user = getCurrentUser();
-      const team = await createTeam(name, user.id);
+      const team = await createTeam(finalName as string, user.id);
       spinner.succeed(chalk.green.bold(`✓ Team created successfully!`));
       logger.title('Team Details');
       console.log(chalk.yellow('ID  :') + chalk.cyan.bold(` ${team.id}`));
@@ -361,7 +369,7 @@ repo
       }
 
       const repoData = {
-        githubId: 0,
+        githubId: Math.floor(Math.random() * 1000000),
         name: repoName,
         fullName: `${user.username}/${repoName}`,
         private: false,

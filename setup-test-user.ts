@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import prisma from './src/db/prisma';
 import { writeConfig } from './src/config/auth.config';
 

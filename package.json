@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "ts-node src/index.ts",
+    "api": "ts-node src/api.ts",
     "build": "tsc"
   },
   "keywords": [],
@@ -21,15 +22,18 @@
     "chalk": "^5.6.2",
     "commander": "^14.0.2",
     "dotenv": "^17.2.3",
+    "express-rate-limit": "^8.2.1",
     "fs": "^0.0.1-security",
     "inquirer": "^13.2.0",
     "open": "^11.0.0",
     "ora": "^9.0.0",
     "os": "^0.1.2",
     "path": "^0.12.7",
-    "prisma": "^6.19.2"
+    "prisma": "^6.19.2",
+    "redis": "^5.10.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.0.10",
     "eslint": "^9.39.2",
