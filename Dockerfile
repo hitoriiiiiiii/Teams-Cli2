@@ -14,7 +14,7 @@ RUN npm install
 COPY . . .
 
 #Build the TypeScript code
-RUN npm run Build
+RUN npm run build
 
 #Command to run the CLI application
 CMD ["node", "dist/cli/index.js"]
