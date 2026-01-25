@@ -23,7 +23,10 @@ export async function initRedis() {
     await redisClient.connect();
     return redisClient;
   } catch (error) {
-    console.warn('⚠️ Redis connection failed. Rate limiting will be disabled.', error);
+    console.warn(
+      '⚠️ Redis connection failed. Rate limiting will be disabled.',
+      error,
+    );
     return null;
   }
 }

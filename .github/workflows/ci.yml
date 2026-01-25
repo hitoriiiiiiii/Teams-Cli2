@@ -39,7 +39,7 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/teams_test
       REDIS_HOST: localhost
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ""
+      REDIS_PASSWORD: ''
       API_PORT: 3000
 
     steps:
@@ -83,4 +83,3 @@ jobs:
             -t teams-cli:${SHA} \
             -t teams-cli:latest \
             .
-     

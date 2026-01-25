@@ -1,6 +1,10 @@
 import express, { Request, Response } from 'express';
 import { initRedis, closeRedis } from './redis';
-import { createRateLimiter, rateLimitByUser, strictRateLimit } from './rateLimiter';
+import {
+  createRateLimiter,
+  rateLimitByUser,
+  strictRateLimit,
+} from './rateLimiter';
 
 const app = express();
 
@@ -14,9 +18,9 @@ async function setupRateLimiting() {
   // Global rate limiter (applies to all routes)
   app.use(
     createRateLimiter({
-      windowMs: 60 * 1000,  // 1 minute
-      maxRequests: 100,      // 100 requests per minute
-    })
+      windowMs: 60 * 1000, // 1 minute
+      maxRequests: 100, // 100 requests per minute
+    }),
   );
 
   console.log('✅ Rate limiting initialized');
@@ -35,27 +39,43 @@ app.get('/api/public/teams', (req: Request, res: Response) => {
 });
 
 // User routes (medium limit)
-app.post('/api/teams', rateLimitByUser({ maxRequests: 20 }), (req: Request, res: Response) => {
-  res.json({ message: 'Team created', id: 1 });
-});
+app.post(
+  '/api/teams',
+  rateLimitByUser({ maxRequests: 20 }),
+  (req: Request, res: Response) => {
+    res.json({ message: 'Team created', id: 1 });
+  },
+);
 
 app.get('/api/teams', rateLimitByUser(), (req: Request, res: Response) => {
   res.json({ teams: [] });
 });
 
 // Authentication routes (strict limit)
-app.post('/api/auth/login', strictRateLimit(), (req: Request, res: Response) => {
-  res.json({ message: 'Login successful', token: 'xyz' });
-});
+app.post(
+  '/api/auth/login',
+  strictRateLimit(),
+  (req: Request, res: Response) => {
+    res.json({ message: 'Login successful', token: 'xyz' });
+  },
+);
 
-app.post('/api/auth/register', strictRateLimit(), (req: Request, res: Response) => {
-  res.json({ message: 'Registration successful', userId: 1 });
-});
+app.post(
+  '/api/auth/register',
+  strictRateLimit(),
+  (req: Request, res: Response) => {
+    res.json({ message: 'Registration successful', userId: 1 });
+  },
+);
 
 // Repository routes
-app.post('/api/repos', rateLimitByUser({ maxRequests: 30 }), (req: Request, res: Response) => {
-  res.json({ message: 'Repository created', id: 1 });
-});
+app.post(
+  '/api/repos',
+  rateLimitByUser({ maxRequests: 30 }),
+  (req: Request, res: Response) => {
+    res.json({ message: 'Repository created', id: 1 });
+  },
+);
 
 app.get('/api/repos', rateLimitByUser(), (req: Request, res: Response) => {
   res.json({ repos: [] });

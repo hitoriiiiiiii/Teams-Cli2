@@ -7,6 +7,7 @@ This project now includes a Redis-based rate limiting system for API endpoints.
 ### Prerequisites
 
 1. **Redis Server** - Install and run Redis locally or use a cloud Redis service
+
    ```bash
    # macOS
    brew install redis
@@ -21,8 +22,9 @@ This project now includes a Redis-based rate limiting system for API endpoints.
    ```
 
 2. **Environment Configuration**
-   
+
    Update `.env`:
+
    ```env
    REDIS_HOST=localhost
    REDIS_PORT=6379
@@ -41,11 +43,13 @@ This starts the Express server on `http://localhost:3000` with Redis-based rate 
 ## Rate Limiting Strategies
 
 ### 1. **Global Rate Limit**
+
 - Applied to ALL routes by default
 - **Limit**: 100 requests per minute
 - **For**: General traffic control
 
 ### 2. **User-Based Rate Limit** (default)
+
 - Applied to authenticated user endpoints
 - **Limit**: 50 requests per hour
 - **For**: `/api/teams`, `/api/repos` endpoints
@@ -55,6 +59,7 @@ This starts the Express server on `http://localhost:3000` with Redis-based rate 
   - `GET /api/repos` - List repositories
 
 ### 3. **Strict Rate Limit** (Authentication)
+
 - Applied to login/register endpoints
 - **Limit**: 5 requests per 15 minutes
 - **For**: Preventing brute force attacks
@@ -63,6 +68,7 @@ This starts the Express server on `http://localhost:3000` with Redis-based rate 
   - `POST /api/auth/register`
 
 ### 4. **Generous Rate Limit** (Public endpoints)
+
 - Applied to public data endpoints
 - **Limit**: 1000 requests per minute
 - **For**: Public API access
@@ -115,14 +121,15 @@ app.post('/api/sensitive-endpoint', strictRateLimit(), (req, res) => {
 // Custom limit
 import { createRateLimiter } from './api/rateLimiter';
 
-app.get('/api/expensive-operation', 
-  createRateLimiter({ 
-    windowMs: 60 * 60 * 1000,  // 1 hour
-    maxRequests: 10,            // 10 requests max
-  }), 
+app.get(
+  '/api/expensive-operation',
+  createRateLimiter({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    maxRequests: 10, // 10 requests max
+  }),
   (req, res) => {
     res.json({ message: 'Expensive operation executed' });
-  }
+  },
 );
 ```
 
@@ -138,6 +145,7 @@ user-ratelimit:{userId/anonymous}:{ip}
 ```
 
 Example:
+
 ```
 ratelimit:user123:192.168.1.1
 ```
@@ -163,17 +171,20 @@ EXPIRE ratelimit:user123:192.168.1.1 3600
 ## API Endpoints
 
 ### Health Check
+
 ```bash
 GET /health
 ```
 
 ### Public Teams
+
 ```bash
 GET /api/public/teams
 Rate Limit: 1000/minute
 ```
 
 ### Team Management
+
 ```bash
 GET /api/teams
 Rate Limit: 50/hour
@@ -183,6 +194,7 @@ Rate Limit: 20/hour
 ```
 
 ### Authentication
+
 ```bash
 POST /api/auth/login
 Rate Limit: 5/15 minutes
@@ -192,6 +204,7 @@ Rate Limit: 5/15 minutes
 ```
 
 ### Repository Management
+
 ```bash
 GET /api/repos
 Rate Limit: 50/hour
@@ -203,6 +216,7 @@ Rate Limit: 30/hour
 ## Fallback Behavior
 
 If Redis connection fails:
+
 - Rate limiting is **disabled** gracefully
 - All requests are allowed through
 - A warning is logged to the console
@@ -222,11 +236,13 @@ This ensures the API remains available even if Redis is unavailable.
 ## Troubleshooting
 
 ### Redis Connection Error
+
 ```
 ⚠️ Redis connection failed. Rate limiting will be disabled.
 ```
 
 **Solution**: Ensure Redis server is running:
+
 ```bash
 # Check if Redis is running
 redis-cli ping
@@ -234,12 +250,14 @@ redis-cli ping
 ```
 
 ### Rate Limit Not Working
+
 1. Verify Redis is running: `redis-cli ping`
 2. Check `.env` configuration
 3. Verify middleware is registered on routes
 4. Check Redis logs for errors
 
 ### High Redis Memory Usage
+
 - Set key expiration times (already done in code)
 - Clear old keys: `FLUSHDB` (use with caution in production)
 - Implement Redis eviction policies in redis.conf

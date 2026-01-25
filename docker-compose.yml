@@ -1,4 +1,4 @@
-version: "3.9"
+version: '3.9'
 
 services:
   db:
@@ -9,11 +9,11 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: teams_cli
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,12 +22,12 @@ services:
     image: redis:7-alpine
     container_name: teams_cli_redis
     ports:
-      - "6379:6379"
+      - '6379:6379'
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -44,10 +44,10 @@ services:
       DATABASE_URL: postgres://postgres:password@db:5432/teams_cli
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: 
+      REDIS_PASSWORD:
       API_PORT: 3000
     ports:
-      - "3000:3000"
+      - '3000:3000'
     volumes:
       - .:/usr/src/app
     command: npm run dev

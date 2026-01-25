@@ -2,18 +2,70 @@
 
 A comprehensive command-line tool and REST API for managing GitHub teams, repositories, and commits. Built with TypeScript, Express, Prisma, and Redis.
 
-## Features
+**Author**: [hitoriiiiiiii](https://github.com/hitoriiiiiiii)  
+**Repository**: https://github.com/hitoriiiiiiii/Teams-Cli
+
+## 📦 Installation
+
+### Global Installation (Recommended for CLI)
+
+```bash
+npm install -g teams-cli
+```
+
+### Local Installation
+
+```bash
+npm install teams-cli
+```
+
+### Using npx (No Installation Required)
+
+```bash
+npx teams-cli login
+npx teams-cli team list
+```
+
+## ✨ Features
 
 - **Team Management**: Create, view, and manage teams
+- **Member Management**: Add, remove, and list team members ⭐
+- **Invite System**: Send invites with unique codes and automatic expiration ⭐
 - **Repository Management**: Add repositories to teams, track GitHub metadata
 - **Commit Tracking**: Monitor and track commits across repositories
 - **User Authentication**: GitHub OAuth integration with secure token handling
 - **Rate Limiting**: Redis-backed API rate limiting for protection against abuse
+- **Analytics**: Team activity tracking and statistics
 - **CLI Interface**: Interactive command-line interface with multiple commands
 - **REST API**: Full-featured REST API for programmatic access
 - **Database**: PostgreSQL with Prisma ORM and migrations
 
-## Project Structure
+## 🚀 Quick Start
+
+```bash
+# Login with GitHub
+teams login
+
+# Create a team
+teams team create MyTeam
+
+# List your teams
+teams team list
+
+# Add a member
+teams member add -t 1 -u username
+
+# Send an invite
+teams invite send -t 1 -u newuser
+
+# Accept an invite
+teams invite accept -c ABC12345
+
+# View analytics
+teams analytics summary -t 1
+```
+
+## 📋 Project Structure
 
 ```
 Teams-CLI/
@@ -25,29 +77,29 @@ Teams-CLI/
 │   ├── cli/              # CLI command handlers
 │   │   ├── command.ts    # Command registration
 │   │   ├── auth.ts       # Authentication commands
-│   │   ├── team.ts       # Team commands
-│   │   ├── repo.ts       # Repository commands
+│   │   ├── team.ts       # Team utilities
 │   │   ├── github.ts     # GitHub integration
 │   │   └── help.ts       # Help documentation
 │   ├── controllers/      # API request handlers
-│   ├── services/         # Business logic
+│   ├── services/         # Business logic & npm services
 │   ├── utils/            # Utility functions
 │   ├── config/           # Configuration files
 │   ├── core/             # Core functionality
 │   ├── db/               # Database setup
 │   └── test/             # Test files
 ├── prisma/               # Database schema and migrations
+├── scripts/              # Build and utility scripts
 ├── coverage/             # Test coverage reports
 ├── docker-compose.yml    # Docker services setup
 ├── Dockerfile           # Docker image configuration
 └── package.json         # Project dependencies
 ```
 
-## Getting Started
+## 📖 Getting Started
 
 ### Prerequisites
 
-- **Node.js** 16+ and npm
+- **Node.js** 18+ and npm 9+
 - **PostgreSQL** database
 - **Redis** server
 - **.env file** with required environment variables
@@ -55,22 +107,26 @@ Teams-CLI/
 ### Installation
 
 1. **Clone the repository**
+
 ```bash
 git clone <repository-url>
 cd teams-cli
 ```
 
 2. **Install dependencies**
+
 ```bash
 npm install
 ```
 
 3. **Set up environment variables**
+
 ```bash
 cp .env.example .env
 ```
 
 Configure your `.env` file with:
+
 ```
 DATABASE_URL=postgresql://user:password@localhost:5432/teams_db
 REDIS_URL=redis://localhost:6379
@@ -80,11 +136,13 @@ GITHUB_CLIENT_SECRET=<github-oauth-client-secret>
 ```
 
 4. **Set up the database**
+
 ```bash
 npx prisma migrate deploy
 ```
 
 5. **Generate Prisma client**
+
 ```bash
 npx prisma generate
 ```
@@ -94,11 +152,13 @@ npx prisma generate
 ### CLI Commands
 
 #### Start the CLI
+
 ```bash
 npm run dev
 ```
 
 #### Available Commands
+
 - `team-cli auth login` - Authenticate with GitHub
 - `team-cli team list` - List all teams
 - `team-cli team create <name>` - Create a new team
@@ -110,6 +170,7 @@ npm run dev
 ### REST API
 
 #### Start the API server
+
 ```bash
 npm run api
 ```
@@ -119,11 +180,13 @@ The server runs on `http://localhost:3000` by default.
 #### API Endpoints
 
 **Health Check**
+
 ```
 GET /health
 ```
 
 **Teams**
+
 ```
 GET    /api/teams           - List all teams
 POST   /api/teams           - Create new team
@@ -131,6 +194,7 @@ GET    /api/teams/:id       - Get team details
 ```
 
 **Repositories**
+
 ```
 GET    /api/repos           - List all repositories
 POST   /api/repos           - Add repository
@@ -138,12 +202,14 @@ GET    /api/repos/:id       - Get repository details
 ```
 
 **Commits**
+
 ```
 GET    /api/commits         - List all commits
 GET    /api/repos/:id/commits - List commits for repository
 ```
 
 **Users**
+
 ```
 GET    /api/users           - List all users
 GET    /api/users/:id       - Get user details
@@ -152,6 +218,7 @@ GET    /api/users/:id       - Get user details
 #### Rate Limiting
 
 The API implements Redis-backed rate limiting:
+
 - **Global limit**: 100 requests per minute
 - **User-specific limits**: 20 requests per minute for authenticated users
 - **Strict limits**: 5 requests per minute for sensitive endpoints
@@ -163,6 +230,7 @@ See [API_RATE_LIMITING.md](./API_RATE_LIMITING.md) for detailed rate limiting do
 The project uses PostgreSQL with the following models:
 
 ### User
+
 - `id`: Auto-incrementing primary key
 - `email`: User email (unique)
 - `githubId`: GitHub user ID (unique)
@@ -170,6 +238,7 @@ The project uses PostgreSQL with the following models:
 - `createdAt`: Account creation timestamp
 
 ### Team
+
 - `id`: Auto-incrementing primary key
 - `name`: Team name
 - `createdAt`: Team creation timestamp
@@ -177,12 +246,14 @@ The project uses PostgreSQL with the following models:
 - `repos`: Associated repositories
 
 ### TeamMember
+
 - `id`: Auto-incrementing primary key
 - `userId`: Reference to User
 - `teamId`: Reference to Team
 - Unique constraint on (userId, teamId)
 
 ### Repo
+
 - `id`: Auto-incrementing primary key
 - `name`: Repository name
 - `fullName`: Full repository name (unique)
@@ -195,6 +266,7 @@ The project uses PostgreSQL with the following models:
 - `commits`: Associated commits
 
 ### Commit
+
 - `id`: Auto-incrementing primary key
 - `message`: Commit message
 - `sha`: Commit SHA (unique)
@@ -204,26 +276,31 @@ The project uses PostgreSQL with the following models:
 ## Development
 
 ### Build the project
+
 ```bash
 npm run build
 ```
 
 ### Run tests
+
 ```bash
 npm test
 ```
 
 ### Run tests with coverage
+
 ```bash
 npm test -- --coverage
 ```
 
 ### Format code
+
 ```bash
 npm run format
 ```
 
 ### Lint code
+
 ```bash
 npm run lint
 ```
@@ -233,16 +310,19 @@ npm run lint
 ### Using Docker Compose
 
 Start all services (PostgreSQL, Redis, API):
+
 ```bash
 docker-compose up -d
 ```
 
 Stop all services:
+
 ```bash
 docker-compose down
 ```
 
 View logs:
+
 ```bash
 docker-compose logs -f
 ```
@@ -254,6 +334,7 @@ docker build -t teams-cli:latest .
 ```
 
 Run with Docker:
+
 ```bash
 docker run -p 3000:3000 --env-file .env teams-cli:latest
 ```
@@ -262,15 +343,15 @@ docker run -p 3000:3000 --env-file .env teams-cli:latest
 
 ### Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `DATABASE_URL` | PostgreSQL connection string | Yes |
-| `REDIS_URL` | Redis connection URL | Yes |
-| `GITHUB_TOKEN` | GitHub personal access token | Yes |
-| `GITHUB_CLIENT_ID` | OAuth client ID | Yes |
-| `GITHUB_CLIENT_SECRET` | OAuth client secret | Yes |
-| `NODE_ENV` | Environment (development/production) | No |
-| `PORT` | API server port | No |
+| Variable               | Description                          | Required |
+| ---------------------- | ------------------------------------ | -------- |
+| `DATABASE_URL`         | PostgreSQL connection string         | Yes      |
+| `REDIS_URL`            | Redis connection URL                 | Yes      |
+| `GITHUB_TOKEN`         | GitHub personal access token         | Yes      |
+| `GITHUB_CLIENT_ID`     | OAuth client ID                      | Yes      |
+| `GITHUB_CLIENT_SECRET` | OAuth client secret                  | Yes      |
+| `NODE_ENV`             | Environment (development/production) | No       |
+| `PORT`                 | API server port                      | No       |
 
 See [REDIS_QUICKSTART.md](./REDIS_QUICKSTART.md) for Redis setup instructions.
 
@@ -292,6 +373,7 @@ The project includes comprehensive test suites:
 - **Test Coverage**: Configured with Jest and coverage reports
 
 Run specific test file:
+
 ```bash
 npm test -- commit.test.ts
 ```
@@ -307,9 +389,11 @@ npm test -- commit.test.ts
 ## Troubleshooting
 
 ### Redis Connection Issues
+
 See [REDIS_QUICKSTART.md](./REDIS_QUICKSTART.md) for Redis troubleshooting.
 
 ### Database Migration Issues
+
 ```bash
 # Reset migrations (development only)
 npx prisma migrate reset
@@ -319,7 +403,9 @@ npx prisma migrate status
 ```
 
 ### Test User Setup
+
 To set up test data:
+
 ```bash
 ts-node setup-test-user.ts
 ```

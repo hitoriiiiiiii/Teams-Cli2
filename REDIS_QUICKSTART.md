@@ -3,6 +3,7 @@
 ## What Was Added?
 
 ✅ **Redis-based rate limiting system** for the API folder with:
+
 - Global rate limiting middleware
 - User-based rate limiting
 - Strict authentication rate limiting
@@ -27,6 +28,7 @@ API_RATE_LIMITING.md # Complete documentation
 ### 1. Install Redis
 
 **Windows**:
+
 ```bash
 # Using Chocolatey
 choco install redis-64
@@ -35,12 +37,14 @@ choco install redis-64
 ```
 
 **macOS**:
+
 ```bash
 brew install redis
 brew services start redis
 ```
 
 **Linux**:
+
 ```bash
 sudo apt-get install redis-server
 sudo systemctl start redis-server
@@ -60,6 +64,7 @@ npm run api
 ```
 
 Expected output:
+
 ```
 ✅ Connected to Redis
 ✅ Rate limiting initialized
@@ -79,18 +84,19 @@ done
 ```
 
 You should see:
+
 - `X-RateLimit-Limit: 50` (max requests)
 - `X-RateLimit-Remaining: 49, 48, 47...` (decreasing)
 - After exceeding limit: `HTTP 429 Too Many Requests`
 
 ## Rate Limiting Tiers
 
-| Tier | Window | Limit | Use Case |
-|------|--------|-------|----------|
-| **Strict** | 15 min | 5 | Login/Register |
-| **User** | 1 hour | 50 | Team/Repo CRUD |
-| **Public** | 1 min | 1000 | Public endpoints |
-| **Global** | 1 min | 100 | All routes (default) |
+| Tier       | Window | Limit | Use Case             |
+| ---------- | ------ | ----- | -------------------- |
+| **Strict** | 15 min | 5     | Login/Register       |
+| **User**   | 1 hour | 50    | Team/Repo CRUD       |
+| **Public** | 1 min  | 1000  | Public endpoints     |
+| **Global** | 1 min  | 100   | All routes (default) |
 
 ## Environment Variables
 
@@ -161,6 +167,7 @@ For production, consider:
 ## Testing Without Redis
 
 If Redis isn't available:
+
 1. API will start normally
 2. Rate limiting will be disabled (logged as warning)
 3. All requests will be allowed through

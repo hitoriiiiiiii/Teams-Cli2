@@ -210,7 +210,9 @@ describe('Repo Module (Prisma Integration Tests)', () => {
     await prisma.repo.delete({ where: { id: deleteRepoId } });
 
     const repo = await prisma.repo.findUnique({ where: { id: deleteRepoId } });
-    const commits = await prisma.commit.findMany({ where: { repoId: deleteRepoId } });
+    const commits = await prisma.commit.findMany({
+      where: { repoId: deleteRepoId },
+    });
 
     expect(repo).toBeNull();
     expect(commits.length).toBe(0);

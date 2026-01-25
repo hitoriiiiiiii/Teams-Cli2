@@ -1,19 +1,64 @@
 {
-  "name": "teams-cli",
+  "name": "@prarthana25/teams-cli",
   "version": "1.0.0",
-  "description": "",
+  "description": "A comprehensive CLI tool for managing teams, team members, repositories, and analyzing team activity with GitHub OAuth integration",
   "main": "dist/index.js",
   "bin": {
-    "team-cli": "dist/index.js"
+    "teams": "dist/index.js"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   },
   "scripts": {
     "dev": "ts-node src/index.ts",
     "api": "ts-node src/api.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "prepare": "npm run build",
+    "pub": "npm publish --access public",
+    "pub:beta": "npm publish --tag beta --access public",
+    "version:patch": "npm version patch",
+    "version:minor": "npm version minor",
+    "version:major": "npm version major",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hitoriiiiiiii/Teams-Cli.git"
+  },
+  "homepage": "https://github.com/hitoriiiiiiii/Teams-Cli#readme",
+  "bugs": {
+    "url": "https://github.com/hitoriiiiiiii/Teams-Cli/issues"
+  },
+  "keywords": [
+    "cli",
+    "teams",
+    "team-management",
+    "github",
+    "oauth",
+    "members",
+    "invites",
+    "analytics",
+    "productivity",
+    "collaboration",
+    "repository-management"
+  ],
+  "author": "hitoriiiiiiii (https://github.com/hitoriiiiiiii)",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "package.json"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "dependencies": {
     "@octokit/rest": "^22.0.1",
     "@prisma/client": "^6.19.2",
@@ -25,12 +70,14 @@
     "express-rate-limit": "^8.2.1",
     "fs": "^0.0.1-security",
     "inquirer": "^13.2.0",
+    "node-cron": "^4.2.1",
     "open": "^11.0.0",
     "ora": "^9.0.0",
     "os": "^0.1.2",
     "path": "^0.12.7",
     "prisma": "^6.19.2",
-    "redis": "^5.10.0"
+    "redis": "^5.10.0",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

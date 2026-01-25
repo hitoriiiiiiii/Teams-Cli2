@@ -10,10 +10,22 @@ import {
   deleteRepoByFullName,
 } from '../controllers/repo.controller';
 import { getCurrentUser } from '../utils/currentUser';
-import { createTeam, getTeamByUser } from '../controllers/team.controller';
-import { addUsertoTeam } from '../controllers/team.controller';
+import {
+  createTeam,
+  getTeamByUser,
+  addUsertoTeam,
+  removeUserFromTeam,
+  getTeamById,
+} from '../controllers/team.controller';
+import {
+  sendInvite,
+  acceptInvite,
+  getTeamInvites,
+  getInviteByCode,
+  rejectInvite,
+} from '../controllers/invite.controller';
 import prisma from '../db/prisma';
-import { ensureUserInTeam } from './team';
+import { ensureUserInTeam, requireLogin } from './team';
 import { getUserByUsername } from '../controllers/user.controller';
 import { getCommits, getCommit } from '../controllers/commits.controller';
 import { logger } from '../utils/logger';
@@ -260,26 +272,28 @@ member
   .option('-t, --team <id>', 'Team ID')
   .option('-u, --username <username>', 'GitHub username')
   .action(async (opts) => {
-    let teamId = opts.team;
-    let username = opts.username;
-
-    if (!teamId) {
-      const { id } = await askTeamId();
-      teamId = id;
-    }
-
-    if (!username) {
-      const { username: inputUsername } = await askGithubUsername();
-      username = inputUsername;
-    }
-
-    const spinner = startSpinner(
-      chalk.cyan(`Adding ${chalk.bold(username)} to team...`),
-      'cyan',
-    );
-
     try {
-      const user = getCurrentUser();
+      // Require login
+      const user = requireLogin();
+
+      let teamId = opts.team;
+      let username = opts.username;
+
+      if (!teamId) {
+        const { id } = await askTeamId();
+        teamId = id;
+      }
+
+      if (!username) {
+        const { username: inputUsername } = await askGithubUsername();
+        username = inputUsername;
+      }
+
+      const spinner = startSpinner(
+        chalk.cyan(`Adding ${chalk.bold(username)} to team...`),
+        'cyan',
+      );
+
       const teamIdNum = Number(teamId);
       const targetUser = await getUserByUsername(username);
 
@@ -294,9 +308,12 @@ member
       spinner.succeed(
         chalk.green.bold(`✓ ${username} added to team ${teamIdNum}`),
       );
-    } catch (error) {
-      spinner.fail(chalk.red.bold('Failed to add member'));
-      console.error(error);
+    } catch (error: any) {
+      if (error.message.includes('no user')) {
+        logger.error('❌ You must login first. Run: teams login');
+      } else {
+        logger.error(`❌ ${error.message}`);
+      }
     }
   });
 
@@ -328,7 +345,33 @@ member
       return;
     }
 
-    logger.success(`➖ Removed ${username} from team ${teamId}`);
+    const spinner = startSpinner(
+      chalk.cyan(`Removing ${chalk.bold(username)} from team...`),
+      'cyan',
+    );
+
+    try {
+      const user = getCurrentUser();
+      const teamIdNum = Number(teamId);
+      const targetUser = await getUserByUsername(username);
+
+      if (!targetUser) {
+        spinner.fail(chalk.red.bold('User not found'));
+        return;
+      }
+
+      // Verify current user is a member of the team
+      await ensureUserInTeam(user.id, teamIdNum);
+
+      // Remove user from team
+      await removeUserFromTeam(targetUser.id, teamIdNum);
+      spinner.succeed(
+        chalk.green.bold(`✓ ${username} removed from team ${teamIdNum}`),
+      );
+    } catch (error: any) {
+      spinner.fail(chalk.red.bold('Failed to remove member'));
+      logger.error(error.message);
+    }
   });
 
 member
@@ -343,8 +386,38 @@ member
       teamId = id;
     }
 
-    logger.title(`👥 Team ${teamId} Members`);
-    console.log(chalk.cyan('Listing members...'));
+    const spinner = startSpinner(
+      chalk.cyan(`Fetching team members...`),
+      'cyan',
+    );
+
+    try {
+      const teamIdNum = Number(teamId);
+      const team = await getTeamById(teamIdNum);
+
+      if (!team) {
+        spinner.fail(chalk.red.bold('Team not found'));
+        return;
+      }
+
+      if (!team.members.length) {
+        spinner.warn(chalk.yellow.bold('No members found in this team'));
+        return;
+      }
+
+      spinner.succeed(chalk.green.bold(`Found ${team.members.length} member(s)`));
+      logger.title(`👥 Team "${team.name}" Members`);
+      team.members.forEach((member: any, index: number) => {
+        console.log(
+          chalk.cyan(`${index + 1}.`) +
+            chalk.white(` ${member.user.username}`) +
+            chalk.dim(` (ID: ${member.user.id})`),
+        );
+      });
+    } catch (error: any) {
+      spinner.fail(chalk.red.bold('Failed to fetch members'));
+      logger.error(error.message);
+    }
   });
 
 // Repositories commands
@@ -494,7 +567,38 @@ invite
       username = inputUsername;
     }
 
-    logger.success(`📨 Invite sent to ${username}`);
+    const spinner = startSpinner(
+      chalk.cyan(`Sending invite to ${chalk.bold(username)}...`),
+      'cyan',
+    );
+
+    try {
+      const user = getCurrentUser();
+      const teamIdNum = Number(teamId);
+
+      // Verify team exists
+      const team = await getTeamById(teamIdNum);
+      if (!team) {
+        spinner.fail(chalk.red.bold('Team not found'));
+        return;
+      }
+
+      // Verify current user is a member of the team
+      await ensureUserInTeam(user.id, teamIdNum);
+
+      // Create invite
+      const invite = await sendInvite(teamIdNum, user.id, username);
+
+      spinner.succeed(chalk.green.bold('✓ Invite sent successfully'));
+      logger.title('Invite Details');
+      console.log(chalk.yellow('Code   :') + chalk.cyan.bold(` ${invite.code}`));
+      console.log(chalk.yellow('To     :') + chalk.cyan.bold(` ${username}`));
+      console.log(chalk.yellow('Team   :') + chalk.cyan.bold(` ${team.name}`));
+      console.log(chalk.dim('Expires: 7 days from now'));
+    } catch (error: any) {
+      spinner.fail(chalk.red.bold('Failed to send invite'));
+      logger.error(error.message);
+    }
   });
 
 invite
@@ -509,14 +613,96 @@ invite
       code = inputCode;
     }
 
-    logger.success(`✅ Invite ${code} accepted`);
+    const spinner = startSpinner(
+      chalk.cyan(`Accepting invite ${chalk.bold(code)}...`),
+      'cyan',
+    );
+
+    try {
+      const user = getCurrentUser();
+      const invite = await acceptInvite(code, user.id);
+
+      spinner.succeed(chalk.green.bold('✓ Invite accepted'));
+      logger.title('Team Joined');
+      console.log(chalk.yellow('Team:') + chalk.cyan.bold(` ${invite.team.name}`));
+    } catch (error: any) {
+      spinner.fail(chalk.red.bold('Failed to accept invite'));
+      logger.error(error.message);
+    }
+  });
+
+invite
+  .command('reject')
+  .description('Reject an invite')
+  .option('-c, --code <code>', 'Invite code')
+  .action(async (opts) => {
+    let code = opts.code;
+
+    if (!code) {
+      const { code: inputCode } = await askInviteCode();
+      code = inputCode;
+    }
+
+    const spinner = startSpinner(
+      chalk.cyan(`Rejecting invite...`),
+      'cyan',
+    );
+
+    try {
+      await rejectInvite(code);
+      spinner.succeed(chalk.green.bold('✓ Invite rejected'));
+    } catch (error: any) {
+      spinner.fail(chalk.red.bold('Failed to reject invite'));
+      logger.error(error.message);
+    }
   });
 
 invite
   .command('list')
-  .description('List invites')
-  .action(() => {
-    console.log('📨 Listing invites...');
+  .description('List pending invites for a team')
+  .option('-t, --team <id>', 'Team ID')
+  .action(async (opts) => {
+    let teamId = opts.team;
+
+    if (!teamId) {
+      const { id } = await askTeamId();
+      teamId = id;
+    }
+
+    const spinner = startSpinner(
+      chalk.cyan(`Fetching invites...`),
+      'cyan',
+    );
+
+    try {
+      const teamIdNum = Number(teamId);
+      const user = getCurrentUser();
+
+      // Verify user is a member of the team
+      await ensureUserInTeam(user.id, teamIdNum);
+
+      const invites = await getTeamInvites(teamIdNum, 'PENDING');
+
+      if (!invites.length) {
+        spinner.warn(chalk.yellow.bold('No pending invites'));
+        return;
+      }
+
+      spinner.succeed(chalk.green.bold(`Found ${invites.length} invite(s)`));
+      logger.title('Pending Invites');
+      invites.forEach((inv: any, index: number) => {
+        console.log(
+          chalk.cyan(`${index + 1}.`) +
+            chalk.white(` Code: ${inv.code}`) +
+            chalk.dim(` → ${inv.invitedUser || 'Pending'}`),
+        );
+        console.log(chalk.dim(`   Sent by: ${inv.inviter.username}`));
+        console.log(chalk.dim(`   Expires: ${new Date(inv.expiresAt).toLocaleDateString()}`));
+      });
+    } catch (error: any) {
+      spinner.fail(chalk.red.bold('Failed to fetch invites'));
+      logger.error(error.message);
+    }
   });
 //commits commands
 
@@ -600,6 +786,214 @@ commits
     } catch (err: any) {
       spinner.fail(chalk.red.bold('Failed to fetch commit'));
       console.error(err.message);
+    }
+  });
+
+//Analytics commands
+const analytics = program
+  .command('analytics')
+  .description('Team analytics & insights');
+
+analytics
+  .command('activity')
+  .description('Show member activity (7 / 14 / 30 days)')
+  .option('-t, --team <id>', 'Team ID')
+  .action(async (opts) => {
+    let teamId = opts.team;
+
+    if (!teamId) {
+      const { id } = await askTeamId();
+      teamId = id;
+    }
+
+    const spinner = startSpinner(
+      chalk.cyan(`Computing activity for team ${teamId}...`),
+      'cyan',
+    );
+
+    try {
+      const data = await prisma.teamMember.findMany({
+        where: { teamId: Number(teamId) },
+        include: {
+          user: {
+            include: {
+              commits: {
+                orderBy: { createdAt: 'desc' },
+                take: 1,
+              },
+            },
+          },
+        },
+      });
+
+      spinner.succeed(chalk.green.bold('✓ Activity computed'));
+
+      logger.title('📊 Member Activity');
+      const now = new Date();
+
+      data.forEach((m) => {
+        const lastCommit = m.user.commits[0]?.createdAt;
+        let status = 'Inactive';
+
+        if (lastCommit) {
+          const days =
+            (now.getTime() - lastCommit.getTime()) / (1000 * 60 * 60 * 24);
+
+          if (days <= 7) status = 'Active (7d)';
+          else if (days <= 14) status = 'Warm (14d)';
+          else if (days <= 30) status = 'Cold (30d)';
+        }
+
+        console.log(
+          chalk.cyan(m.user.username) +
+            chalk.white(' → ') +
+            chalk.yellow(status),
+        );
+      });
+    } catch (err) {
+      spinner.fail(chalk.red.bold('Failed to compute activity'));
+      console.error(err);
+    }
+  });
+
+analytics
+  .command('leaderboard')
+  .description('Show top contributors')
+  .option('-t, --team <id>', 'Team ID')
+  .action(async (opts) => {
+    let teamId = opts.team;
+
+    if (!teamId) {
+      const { id } = await askTeamId();
+      teamId = id;
+    }
+
+    const spinner = startSpinner(
+      chalk.cyan('Generating leaderboard...'),
+      'cyan',
+    );
+
+    try {
+      const leaderboard = await prisma.commit.groupBy({
+        by: ['authorId'],
+        where: {
+          repo: { teamId: Number(teamId) },
+          authorId: { not: null },
+        },
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+      });
+
+      spinner.succeed(chalk.green.bold('✓ Leaderboard ready'));
+      logger.title('🏆 Team Leaderboard');
+
+      for (let i = 0; i < leaderboard.length; i++) {
+        const user = await prisma.user.findUnique({
+          where: { id: leaderboard[i].authorId! },
+        });
+
+        console.log(
+          chalk.yellow(`#${i + 1}`) +
+            ' ' +
+            chalk.cyan(user?.username) +
+            chalk.white(` → ${leaderboard[i]._count.id} commits`),
+        );
+      }
+    } catch (err) {
+      spinner.fail(chalk.red.bold('Failed to generate leaderboard'));
+      console.error(err);
+    }
+  });
+analytics
+  .command('member')
+  .description('Show analytics for a member')
+  .option('-t, --team <id>', 'Team ID')
+  .option('-u, --username <username>', 'GitHub username')
+  .action(async (opts) => {
+    let teamId = opts.team;
+    let username = opts.username;
+
+    if (!teamId) {
+      const { id } = await askTeamId();
+      teamId = id;
+    }
+
+    if (!username) {
+      const { username: u } = await askGithubUsername();
+      username = u;
+    }
+
+    const spinner = startSpinner(
+      chalk.cyan(`Fetching analytics for ${username}...`),
+      'cyan',
+    );
+
+    try {
+      const user = await getUserByUsername(username);
+      if (!user) throw new Error('User not found');
+
+      const commits = await prisma.commit.count({
+        where: {
+          authorId: user.id,
+          repo: { teamId: Number(teamId) },
+        },
+      });
+
+      const lastCommit = await prisma.commit.findFirst({
+        where: {
+          authorId: user.id,
+          repo: { teamId: Number(teamId) },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      spinner.succeed(chalk.green.bold('✓ Analytics ready'));
+      logger.title(`📈 ${username} Analytics`);
+
+      console.log(chalk.yellow('Total Commits: ') + commits);
+      console.log(
+        chalk.yellow('Last Active  : ') + (lastCommit?.createdAt || 'Never'),
+      );
+    } catch (err) {
+      spinner.fail(chalk.red.bold('Failed to fetch member analytics'));
+      console.error(err);
+    }
+  });
+
+analytics
+  .command('summary')
+  .description('Show team analytics summary')
+  .option('-t, --team <id>', 'Team ID')
+  .action(async (opts) => {
+    let teamId = opts.team;
+
+    if (!teamId) {
+      const { id } = await askTeamId();
+      teamId = id;
+    }
+
+    const spinner = startSpinner(
+      chalk.cyan('Building team summary...'),
+      'cyan',
+    );
+
+    try {
+      const members = await prisma.teamMember.count({
+        where: { teamId: Number(teamId) },
+      });
+
+      const commits = await prisma.commit.count({
+        where: { repo: { teamId: Number(teamId) } },
+      });
+
+      spinner.succeed(chalk.green.bold('✓ Summary ready'));
+      logger.title('📊 Team Summary');
+
+      console.log(chalk.cyan('Members : ') + members);
+      console.log(chalk.cyan('Commits : ') + commits);
+    } catch (err) {
+      spinner.fail(chalk.red.bold('Failed to generate summary'));
+      console.error(err);
     }
   });
 

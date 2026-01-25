@@ -1,7 +1,5 @@
-
- //API Server with Redis-based Rate Limiting
- //Run this to start the API server separately from the CLI
- 
+//API Server with Redis-based Rate Limiting
+//Run this to start the API server separately from the CLI
 
 import 'dotenv/config';
 import { app, setupRateLimiting } from './api/server';

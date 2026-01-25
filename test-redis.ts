@@ -53,7 +53,7 @@ async function testRedis() {
     console.log('Test 6: Redis Server Info');
     const info = await redis.info();
     const lines = info.split('\r\n').slice(0, 5);
-    lines.forEach(line => console.log(`   ${line}`));
+    lines.forEach((line) => console.log(`   ${line}`));
 
     // Cleanup
     console.log('\n🧹 Cleaning up test keys...');

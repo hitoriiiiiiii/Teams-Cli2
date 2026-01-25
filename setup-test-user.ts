@@ -6,7 +6,7 @@ async function setupTestUser() {
   try {
     // Get or create test user
     let user = await prisma.user.findFirst({
-      where: { username: 'testuser' }
+      where: { username: 'testuser' },
     });
 
     if (!user) {
@@ -14,8 +14,8 @@ async function setupTestUser() {
         data: {
           githubId: 'test-user-001',
           username: 'testuser',
-          email: 'test@example.com'
-        }
+          email: 'test@example.com',
+        },
       });
       console.log('✅ Test user created');
     } else {
@@ -28,8 +28,8 @@ async function setupTestUser() {
         id: user.id,
         githubId: user.githubId,
         username: user.username,
-        email: user.email
-      }
+        email: user.email,
+      },
     });
 
     console.log('✅ User config saved');

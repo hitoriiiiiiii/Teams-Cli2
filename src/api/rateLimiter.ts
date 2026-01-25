@@ -2,8 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { getRedisClient } from './redis';
 
 export interface RateLimitConfig {
-  windowMs: number;      // Time window in milliseconds
-  maxRequests: number;   // Max requests per window
+  windowMs: number; // Time window in milliseconds
+  maxRequests: number; // Max requests per window
   keyPrefix?: string;
   message?: string;
 }
@@ -14,8 +14,8 @@ export interface RateLimitConfig {
  */
 export function createRateLimiter(config: RateLimitConfig) {
   const {
-    windowMs = 60 * 1000,    // 1 minute default
-    maxRequests = 100,        // 100 requests default
+    windowMs = 60 * 1000, // 1 minute default
+    maxRequests = 100, // 100 requests default
     keyPrefix = 'ratelimit:', // Redis key prefix
     message = 'Too many requests, please try again later.',
   } = config;
@@ -42,8 +42,14 @@ export function createRateLimiter(config: RateLimitConfig) {
 
       // Add rate limit info to response headers
       res.setHeader('X-RateLimit-Limit', maxRequests.toString());
-      res.setHeader('X-RateLimit-Remaining', Math.max(0, maxRequests - current).toString());
-      res.setHeader('X-RateLimit-Reset', new Date(Date.now() + windowMs).toISOString());
+      res.setHeader(
+        'X-RateLimit-Remaining',
+        Math.max(0, maxRequests - current).toString(),
+      );
+      res.setHeader(
+        'X-RateLimit-Reset',
+        new Date(Date.now() + windowMs).toISOString(),
+      );
 
       if (current > maxRequests) {
         return res.status(429).json({
