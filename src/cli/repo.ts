@@ -6,13 +6,13 @@ import {
   disconnectRepo,
   listRepos,
 } from '../services/github.services';
-import { requireAuth } from '../core/token';
+import { requireLogin } from './team';
 
 /**
  * Connect a GitHub repository
  */
 export async function connectRepoCommand() {
-  requireAuth();
+  requireLogin();
 
   const spinner = ora('Preparing to connect repository...').start();
 
@@ -38,7 +38,7 @@ export async function connectRepoCommand() {
  * Disconnect a repository
  */
 export async function disconnectRepoCommand() {
-  requireAuth();
+  requireLogin();
 
   const repos = await listRepos();
 
@@ -69,7 +69,7 @@ export async function disconnectRepoCommand() {
  * List connected repositories
  */
 export async function listRepoCommand() {
-  requireAuth();
+  requireLogin();
 
   const spinner = ora('Fetching repositories...').start();
 

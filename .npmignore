@@ -12,6 +12,11 @@ jest.config.ts
 .prettierrc*
 .env*
 
+# Database
+prisma/
+.env.local
+.env.*.local
+
 # Development dependencies
 node_modules/
 .node_modules.txt
