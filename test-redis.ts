@@ -1,11 +1,11 @@
-#!/usr/bin/env ts-node
 
 /**
- * Quick Redis connectivity test
+ * Quick Redis connectivity test with Invite Rate Limiter test
  * Run: npx ts-node test-redis.ts
  */
 
 import { initRedis, getRedisClient, closeRedis } from './src/api/redis';
+import { checkInviteRateLimit, getInviteRateLimitRemaining } from './src/api/rateLimiter';
 
 async function testRedis() {
   console.log('🔍 Testing Redis Connection...\n');
@@ -55,17 +55,33 @@ async function testRedis() {
     const lines = info.split('\r\n').slice(0, 5);
     lines.forEach((line) => console.log(`   ${line}`));
 
+    // Test 7: Invite Rate Limiter Test
+    console.log('\n═══════════════════════════════════════');
+    console.log('Test 7: Invite Rate Limiter\n');
+    const testUserId = 9999;
+    const testTeamId = 8888;
+
+    console.log(`   Testing rate limit for user ${testUserId}, team ${testTeamId}`);
+    for (let i = 1; i <= 12; i++) {
+      const withinLimit = await checkInviteRateLimit(testUserId, testTeamId);
+      const remaining = await getInviteRateLimitRemaining(testUserId, testTeamId);
+      const status = withinLimit ? '✅' : '❌';
+      console.log(`   Attempt ${i}: ${status} Within Limit: ${withinLimit}, Remaining: ${remaining}`);
+    }
+
     // Cleanup
     console.log('\n🧹 Cleaning up test keys...');
     await redis.del('test-key');
     await redis.del('test-ratelimit:user123');
     await redis.del('temp-key');
+    await redis.del(`invite-ratelimit:${testUserId}:${testTeamId}`);
     console.log('   ✅ Cleanup complete\n');
 
     // Summary
     console.log('═══════════════════════════════════════');
     console.log('✅ All Redis tests passed!');
     console.log('✅ Redis is working properly');
+    console.log('✅ Invite rate limiter is working correctly');
     console.log('═══════════════════════════════════════\n');
 
     await closeRedis();

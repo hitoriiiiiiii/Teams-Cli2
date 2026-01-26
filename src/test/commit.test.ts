@@ -8,24 +8,20 @@ describe('Commit Module (Prisma Integration Tests)', () => {
   let commitId2: number | undefined;
 
   beforeAll(async () => {
-    // Clean DB in FK-safe order
-    await prisma.commit.deleteMany();
-    await prisma.repo.deleteMany();
-    await prisma.teamMember.deleteMany();
-    await prisma.team.deleteMany();
-    await prisma.user.deleteMany();
+    // Create fresh test data with unique names to avoid conflicts
+    const testTimestamp = Date.now();
 
-    const user = await prisma.user.create({
+    const newUser = await prisma.user.create({
       data: {
-        githubId: 'commit_user_001',
-        username: 'COMMIT_USER',
-        email: 'commituser@test.com',
+        githubId: 'commit_user_' + testTimestamp,
+        username: 'COMMIT_USER_' + testTimestamp,
+        email: `commituser_${testTimestamp}@test.com`,
       },
     });
-    userId = user.id;
+    userId = newUser.id;
 
     const team = await prisma.team.create({
-      data: { name: 'Commit Team' },
+      data: { name: 'Commit Team ' + testTimestamp },
     });
     teamId = team.id;
 
@@ -36,8 +32,8 @@ describe('Commit Module (Prisma Integration Tests)', () => {
     const repo = await prisma.repo.create({
       data: {
         name: 'Commit Repo',
-        fullName: 'Commit Team/Commit Repo',
-        githubId: 5555,
+        fullName: 'Commit Team/Commit Repo ' + testTimestamp,
+        githubId: Math.floor(5555 + Math.random() * 10000),
         teamId,
         stars: 5,
         forks: 1,
@@ -46,6 +42,21 @@ describe('Commit Module (Prisma Integration Tests)', () => {
       },
     });
     repoId = repo.id;
+  });
+
+  afterAll(async () => {
+    // Attempt cleanup (best effort, ignore errors to avoid interfering with other tests)
+    try {
+      await prisma.commit.deleteMany({ where: { repoId } });
+      await prisma.repo.deleteMany({ where: { id: repoId } });
+      await prisma.teamMember.deleteMany({ where: { teamId } });
+      await prisma.team.deleteMany({ where: { id: teamId } });
+      await prisma.user.deleteMany({ where: { id: userId } });
+    } catch (error) {
+      // Silently ignore cleanup errors
+    }
+
+    await prisma.$disconnect();
   });
 
   it('should create multiple commits for repo', async () => {

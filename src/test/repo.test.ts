@@ -6,19 +6,15 @@ describe('Repo Module (Prisma Integration Tests)', () => {
   let repoId: number;
 
   beforeAll(async () => {
-    // Clean DB in FK-safe order
-    await prisma.commit.deleteMany();
-    await prisma.repo.deleteMany();
-    await prisma.teamMember.deleteMany();
-    await prisma.team.deleteMany();
-    await prisma.user.deleteMany();
+    // Create test data with unique identifiers
+    const testTimestamp = Date.now();
 
     // Create a test user
     const user = await prisma.user.create({
       data: {
-        githubId: 'repo_user_001',
-        username: 'REPO_USER',
-        email: 'repouser@test.com',
+        githubId: 'repo_user_' + testTimestamp,
+        username: 'REPO_USER_' + testTimestamp,
+        email: `repouser_${testTimestamp}@test.com`,
       },
     });
     userId = user.id;
@@ -26,7 +22,7 @@ describe('Repo Module (Prisma Integration Tests)', () => {
     // Create a test team
     const team = await prisma.team.create({
       data: {
-        name: 'Repo Team',
+        name: 'Repo Team ' + testTimestamp,
       },
     });
     teamId = team.id;
@@ -41,6 +37,27 @@ describe('Repo Module (Prisma Integration Tests)', () => {
   });
 
   afterAll(async () => {
+    // Clean up only our test data
+    try {
+      await prisma.commit.deleteMany({
+        where: { repo: { teamId } },
+      });
+      await prisma.repo.deleteMany({
+        where: { teamId },
+      });
+      await prisma.teamMember.deleteMany({
+        where: { teamId },
+      });
+      await prisma.team.deleteMany({
+        where: { id: teamId },
+      });
+      await prisma.user.deleteMany({
+        where: { id: userId },
+      });
+    } catch (error) {
+      // Ignore cleanup errors
+    }
+
     await prisma.$disconnect();
   });
 
@@ -77,7 +94,7 @@ describe('Repo Module (Prisma Integration Tests)', () => {
     });
 
     expect(repo).not.toBeNull();
-    expect(repo?.team.name).toBe('Repo Team');
+    expect(repo?.team.id).toBe(teamId);
   });
 
   // CREATE COMMITS FOR REPO

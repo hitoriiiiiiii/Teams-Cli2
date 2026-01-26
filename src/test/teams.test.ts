@@ -5,23 +5,38 @@ describe('Teams Module (Prisma Integration Tests)', () => {
   let teamId: number;
 
   beforeAll(async () => {
-    // Clean DB in FK-safe order (NO try/catch)
-    await prisma.commit.deleteMany();
-    await prisma.repo.deleteMany();
-    await prisma.teamMember.deleteMany();
-    await prisma.team.deleteMany();
-    await prisma.user.deleteMany();
+    // Create test data with unique identifiers
+    const testTimestamp = Date.now();
 
     // Create user
     const user = await prisma.user.create({
       data: {
-        githubId: 'team_user_001',
-        username: 'TEAM_USER',
-        email: 'teamuser@test.com',
+        githubId: 'team_user_' + testTimestamp,
+        username: 'TEAM_USER_' + testTimestamp,
+        email: `teamuser_${testTimestamp}@test.com`,
       },
     });
 
     userId = user.id;
+  });
+
+  afterAll(async () => {
+    // Clean up only our test data
+    try {
+      await prisma.teamMember.deleteMany({
+        where: { userId },
+      });
+      await prisma.team.deleteMany({
+        where: { members: { some: { userId } } },
+      });
+      await prisma.user.deleteMany({
+        where: { id: userId },
+      });
+    } catch (error) {
+      // Ignore cleanup errors
+    }
+
+    await prisma.$disconnect();
   });
 
   // CREATE TEAM
@@ -57,7 +72,7 @@ describe('Teams Module (Prisma Integration Tests)', () => {
 
     expect(team).not.toBeNull();
     expect(team?.members.length).toBe(1);
-    expect(team?.members[0].user.username).toBe('TEAM_USER');
+    expect(team?.members[0].user.id).toBe(userId);
   });
 
   // FETCH USER TEAMS

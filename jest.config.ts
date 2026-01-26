@@ -14,6 +14,9 @@ const config: Config = {
       },
     ],
   },
+  moduleNameMapper: {
+    '^uuid$': '<rootDir>/__mocks__/uuid.js',
+  },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 };
 

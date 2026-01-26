@@ -4,6 +4,8 @@ import {
   createRateLimiter,
   rateLimitByUser,
   strictRateLimit,
+  checkInviteRateLimit,
+  getInviteRateLimitRemaining,
 } from './rateLimiter';
 
 const app = express();
@@ -80,6 +82,53 @@ app.post(
 app.get('/api/repos', rateLimitByUser(), (req: Request, res: Response) => {
   res.json({ repos: [] });
 });
+
+// Invitation routes with rate limiting
+app.post(
+  '/api/invites/send',
+  async (req: Request, res: Response) => {
+    try {
+      const { userId, teamId } = req.body;
+
+      // Check invitation rate limit (max 10 per hour per team)
+      const withinLimit = await checkInviteRateLimit(userId, teamId);
+      if (!withinLimit) {
+        const remaining = await getInviteRateLimitRemaining(userId, teamId);
+        return res.status(429).json({
+          error: 'Invitation rate limit exceeded',
+          message: `You can send max 10 invites per hour per team. Remaining: ${remaining}`,
+          retryAfter: 3600,
+        });
+      }
+
+      res.json({ message: 'Invitation sent', code: 'ABC12345' });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+);
+
+app.get(
+  '/api/invites/check-limit',
+  async (req: Request, res: Response) => {
+    try {
+      const { userId, teamId } = req.query;
+
+      const remaining = await getInviteRateLimitRemaining(
+        parseInt(userId as string),
+        parseInt(teamId as string)
+      );
+
+      res.json({
+        maxInvitesPerHour: 10,
+        remaining,
+        status: remaining > 0 ? 'OK' : 'LIMIT_EXCEEDED',
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+);
 
 // Error handling
 app.use((err: any, req: Request, res: Response, next: any) => {

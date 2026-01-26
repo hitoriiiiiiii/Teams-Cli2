@@ -103,3 +103,58 @@ export function generousRateLimit() {
     keyPrefix: 'public-ratelimit:',
   });
 }
+
+/**
+ * Check rate limit for invitations
+ * Limits users to sending 10 invites per hour per team
+ */
+export async function checkInviteRateLimit(userId: number, teamId: number): Promise<boolean> {
+  const redisClient = getRedisClient();
+
+  if (!redisClient) {
+    // Redis not available, skip rate limiting
+    return true;
+  }
+
+  try {
+    const key = `invite-ratelimit:${userId}:${teamId}`;
+    const windowMs = 60 * 60 * 1000; // 1 hour
+    const maxInvites = 10; // Max 10 invites per hour per team
+
+    const current = await redisClient.incr(key);
+
+    // Set expiration on first request
+    if (current === 1) {
+      await redisClient.expire(key, Math.ceil(windowMs / 1000));
+    }
+
+    return current <= maxInvites;
+  } catch (error) {
+    console.error('Invite rate limit check error:', error);
+    // On error, allow the request to proceed
+    return true;
+  }
+}
+
+/**
+ * Get invite rate limit remaining
+ */
+export async function getInviteRateLimitRemaining(userId: number, teamId: number): Promise<number> {
+  const redisClient = getRedisClient();
+
+  if (!redisClient) {
+    return 10;
+  }
+
+  try {
+    const key = `invite-ratelimit:${userId}:${teamId}`;
+    const maxInvites = 10;
+    const current = await redisClient.get(key);
+    const currentCount = current ? parseInt(current) : 0;
+
+    return Math.max(0, maxInvites - currentCount);
+  } catch (error) {
+    console.error('Error getting invite rate limit remaining:', error);
+    return 10;
+  }
+}

@@ -1,5 +1,6 @@
 import prisma from '../db/prisma';
 import { v4 as uuidv4 } from 'uuid';
+import { checkInviteRateLimit, getInviteRateLimitRemaining } from '../api/rateLimiter';
 
 /**
  * Send an invite to a user to join a team
@@ -9,6 +10,15 @@ export async function sendInvite(
   invitedBy: number,
   targetUsername: string,
 ) {
+  // Check rate limit
+  const withinLimit = await checkInviteRateLimit(invitedBy, teamId);
+  if (!withinLimit) {
+    const remaining = await getInviteRateLimitRemaining(invitedBy, teamId);
+    throw new Error(
+      `Rate limit exceeded. You can send max 10 invites per hour per team. Remaining: ${remaining}`
+    );
+  }
+
   // Verify the inviter is a member of the team
   const member = await prisma.teamMember.findFirst({
     where: { userId: invitedBy, teamId },
