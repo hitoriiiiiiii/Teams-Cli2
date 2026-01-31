@@ -68,12 +68,3 @@ export function logoutUser() {
   console.log(chalk.red('Logged out successfully'));
 }
 
-// Auth status
-export function authStatus() {
-  const token = getAuthToken();
-  if (!token) {
-    console.log(chalk.red('Not logged in'));
-  } else {
-    console.log(chalk.green('Logged in'));
-  }
-}

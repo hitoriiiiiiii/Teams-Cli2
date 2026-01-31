@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import { showHelp } from './help';
-import { loginWithGithub, logoutUser, authStatus } from '../cli/auth';
+import { loginWithGithub, logoutUser } from '../cli/auth';
 import { getGithubUser } from './github';
 import {
   createRepo,

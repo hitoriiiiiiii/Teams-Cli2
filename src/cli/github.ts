@@ -7,12 +7,13 @@ export async function getGithubUser() {
   const token = getAuthToken();
 
   if (!token) {
-    console.log(chalk.red('❌ Not logged in. Run `teams login` first.'));
+    console.log(chalk.red('❌ Not logged in.'));
+    console.log(chalk.yellow('👉 Run `teams login` and paste a valid GitHub token.'));
     return;
   }
 
   try {
-    // Fetch GitHub profile using token
+    // Fetch GitHub profile
     const res = await axios.get('https://api.github.com/user', {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -22,14 +23,14 @@ export async function getGithubUser() {
 
     const githubUser = res.data;
 
-    // Upsert user into database
+    // Save / update user in DB
     const user = await upsertGitHubUser({
       githubId: githubUser.id.toString(),
       username: githubUser.login,
-      email: githubUser.email, // might be null
+      email: githubUser.email ?? null,
     });
 
-    // Save user info locally in config
+    // Update local config (DO NOT overwrite token)
     writeConfig({
       user: {
         id: user.id,
@@ -39,15 +40,29 @@ export async function getGithubUser() {
       },
     });
 
-    // Show GitHub profile in CLI
+    // CLI output
     console.log(chalk.green('✅ GitHub Profile'));
     console.log(`Username : ${user.username}`);
     console.log(`Email    : ${user.email ?? 'Private'}`);
-    console.log('User saved to DB:', user);
-    
+
     return user;
   } catch (err: any) {
-    console.log(chalk.red('❌ Failed to fetch GitHub profile'));
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
+
+      if (status === 401 || status === 403) {
+        console.log(chalk.red('❌ Invalid or expired GitHub token.'));
+        console.log(chalk.yellow('👉 Run `teams login` again.'));
+        return;
+      }
+
+      if (status === 404) {
+        console.log(chalk.red('❌ GitHub user not found.'));
+        return;
+      }
+    }
+
+    console.log(chalk.red('❌ Failed to fetch GitHub profile.'));
     console.error(err.message);
   }
 }
