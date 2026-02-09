@@ -1,12 +1,12 @@
 # 🚀 Teams CLI
 
-> A comprehensive, production-ready CLI tool and REST API for managing GitHub teams, repositories, members, and analytics. Built with **TypeScript**, **Express**, **Prisma**, and **Redis**.
+> A comprehensive, production-ready CLI tool and REST API for managing GitHub teams, repositories, members, and analytics. Built with **TypeScript**, **Express**, **Drizzle ORM**, and **Redis**.
 
 [![npm version](https://img.shields.io/npm/v/@prarthana25/teams-cli)](https://www.npmjs.com/package/@prarthana25/teams-cli)
 [![Node.js](https://img.shields.io/node/v/@prarthana25/teams-cli)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Author**: [hitoriiiiiiii](https://github.com/hitoriiiiiiii) | **GitHub**: [Teams-Cli](https://github.com/hitoriiiiiiii/Teams-Cli)
+**Author**: [hitoriiiiiiii](https://github.com/hitoriiiiiiii) | **GitHub**: [Teams-Cli2](https://github.com/hitoriiiiiiii/Teams-Cli2)
 
 ---
 
@@ -24,7 +24,7 @@
 - 📊 **Analytics** - Real-time team activity tracking and detailed statistics
 - 🖥️ **CLI Interface** - Interactive command-line interface with intuitive commands
 - 🔌 **REST API** - Full-featured REST API for programmatic access
-- 🗄️ **PostgreSQL** - Enterprise-grade database with Prisma ORM and migrations
+- 🗄️ **SQLite Database** - Lightweight, file-based database with Drizzle ORM for type-safe queries
 
 ## 📦 Installation
 
@@ -219,7 +219,10 @@ Teams-CLI/
 │   │   └── cron.analytics.ts   # Scheduled analytics
 │   │
 │   ├── db/                     # Database layer
-│   │   └── prisma.ts           # Prisma client initialization
+│   │   ├── index.ts            # Drizzle ORM initialization
+│   │   ├── schema.ts           # Database schema definitions
+│   │   ├── queries.ts          # Prepared queries
+│   │   └── repositories/       # Data access layer
 │   │
 │   ├── test/                   # Test files
 │   │   ├── teams.test.ts
@@ -231,14 +234,13 @@ Teams-CLI/
 │   ├── index.ts                # CLI entry point
 │   └── api.ts                  # API entry point
 │
-├── prisma/                     # Database ORM
-│   ├── schema.prisma           # Database schema
-│   └── migrations/             # Database migrations
+├── drizzle/                    # Database migrations
+│   └── migrations/
 │
 ├── scripts/                    # Build & utility scripts
 │   └── pre-publish-check.ts
 │
-├── docker-compose.yml          # Docker services (PostgreSQL, Redis)
+├── docker-compose.yml          # Docker services configuration
 ├── Dockerfile                  # Docker image
 ├── jest.config.ts              # Jest testing configuration
 ├── tsconfig.json               # TypeScript configuration
@@ -254,9 +256,9 @@ Teams-CLI/
 
 - **Node.js** `18.0.0` or higher
 - **npm** `9.0.0` or higher
-- **PostgreSQL** `12+` (for database)
-- **Redis** `6+` (for caching & rate limiting)
+- **SQLite** (included - no separate installation needed)
 - **GitHub Account** (for OAuth)
+- **Docker & Docker Compose** (optional, for containerized deployment)
 
 ### 🔧 Installation Steps
 
@@ -264,7 +266,8 @@ Teams-CLI/
 
 ```bash
 git clone https://github.com/hitoriiiiiiii/Teams-Cli.git
-cd Teams-CLI
+git clone https://github.com/hitoriiiiiiii/Teams-Cli2.git
+cd Teams-Cli2
 ```
 
 #### Step 2: Install Dependencies
@@ -278,11 +281,8 @@ npm install
 Create a `.env` file in the root directory:
 
 ```env
-# Database Configuration
-DATABASE_URL="postgresql://user:password@localhost:5432/teams_db"
-
-# Redis Configuration
-REDIS_URL="redis://localhost:6379"
+# Database Configuration (SQLite - auto-created)
+DATABASE_URL="file:./.teams-cli/teams.db"
 
 # GitHub OAuth
 GITHUB_CLIENT_ID="your-github-oauth-client-id"
@@ -304,11 +304,8 @@ NODE_ENV=development
 #### Step 4: Set Up Database
 
 ```bash
-# Run Prisma migrations
-npx prisma migrate deploy
-
-# Generate Prisma client
-npx prisma generate
+# Database is automatically initialized on first run
+# SQLite database will be created at ~/.teams-cli/teams.db
 
 # (Optional) Seed test data
 ts-node setup-test-user.ts
@@ -574,6 +571,9 @@ Pre-built images available on Docker Hub:
 # Pull specific version
 docker pull prarthana25/teams-cli:1.0.5
 
+# Alternative image (myapp:v2)
+docker pull prarthana25/myapp:v2
+
 # Pull latest version
 docker pull prarthana25/teams-cli:latest
 
@@ -601,15 +601,12 @@ docker run -p 3000:3000 teams-cli:latest
 Docker Compose automatically configures:
 
 ```env
-# Database
-DATABASE_URL=postgres://postgres:password@db:5432/teams_cli
-
-# Redis
-REDIS_HOST=redis
-REDIS_PORT=6379
+# Database (SQLite - volume-persisted)
+DATABASE_URL=file:/app/.teams-cli/teams.db
 
 # API
 API_PORT=3000
+NODE_ENV=production
 ```
 
 To override, create a `.env.docker` file and run:
@@ -626,11 +623,8 @@ Once containers are running:
 # API Health Check
 curl http://localhost:3000/health
 
-# PostgreSQL Connection
-psql postgresql://postgres:password@localhost:5432/teams_cli
-
-# Redis CLI
-redis-cli -p 6379
+# Run CLI commands in container
+docker-compose exec app teams --help
 ```
 
 ### 🔧 Troubleshooting Docker
@@ -655,18 +649,12 @@ docker-compose down
 docker-compose -f docker-compose.yml up -d -p 3001:3000
 ```
 
-**Database not migrating:**
+**Database issues:**
 
 ```bash
-# Manually run migrations in container
-docker-compose exec app npx prisma migrate deploy
-```
-
-**Redis connection issues:**
-
-```bash
-# Test Redis connection
-docker-compose exec redis redis-cli ping
+# Database is automatically initialized on first run
+# Check database file location
+ls -la ~/.teams-cli/teams.db
 ```
 
 **Force rebuild (clear cache):**
@@ -682,16 +670,15 @@ docker-compose up -d
 
 ### Environment Variables
 
-| Variable               | Description                  | Required | Default       |
-| ---------------------- | ---------------------------- | -------- | ------------- |
-| `DATABASE_URL`         | PostgreSQL connection string | ✅ Yes   | —             |
-| `REDIS_URL`            | Redis connection URL         | ✅ Yes   | —             |
-| `GITHUB_CLIENT_ID`     | OAuth client ID              | ✅ Yes   | —             |
-| `GITHUB_CLIENT_SECRET` | OAuth client secret          | ✅ Yes   | —             |
-| `GITHUB_TOKEN`         | GitHub personal access token | ✅ Yes   | —             |
-| `NODE_ENV`             | Runtime environment          | ❌ No    | `development` |
-| `PORT`                 | API server port              | ❌ No    | `3000`        |
-| `LOG_LEVEL`            | Logging level                | ❌ No    | `info`        |
+| Variable               | Description                      | Required | Default       |
+| ---------------------- | -------------------------------- | -------- | ------------- |
+| `DATABASE_URL`         | SQLite database path             | ❌ No    | `~/.teams-cli/teams.db` |
+| `GITHUB_CLIENT_ID`     | OAuth client ID                  | ✅ Yes   | —             |
+| `GITHUB_CLIENT_SECRET` | OAuth client secret              | ✅ Yes   | —             |
+| `GITHUB_TOKEN`         | GitHub personal access token     | ✅ Yes   | —             |
+| `NODE_ENV`             | Runtime environment              | ❌ No    | `development` |
+| `PORT`                 | API server port                  | ❌ No    | `3000`        |
+| `LOG_LEVEL`            | Logging level                    | ❌ No    | `info`        |
 
 ## 📖 Development Guide
 
@@ -724,30 +711,21 @@ npm run version:major    # Bump major version
 ### Database Management
 
 ```bash
-# Create database migrations
-npx prisma migrate dev --name migration_name
+# Generate Drizzle ORM migrations
+npm run migrate:generate
 
 # Apply pending migrations
-npx prisma migrate deploy
+npm run migrate:push
 
-# Check migration status
-npx prisma migrate status
-
-# Reset database (development only)
-npx prisma migrate reset
-
-# View database in Prisma Studio
-npx prisma studio
-
-# Generate Prisma client
-npx prisma generate
+# View database schema
+# Database file is located at ~/.teams-cli/teams.db
 ```
 
 ### Adding a New Feature
 
 1. Create feature branch: `git checkout -b feature/my-feature`
-2. Update database schema in `prisma/schema.prisma` if needed
-3. Create migration: `npx prisma migrate dev --name my_feature`
+2. Update database schema in `src/db/schema.ts` if needed
+3. Generate migration: `npm run migrate:generate`
 4. Implement feature in `src/`
 5. Add tests in `src/test/`
 6. Run tests: `npm test`
@@ -776,20 +754,18 @@ docker run -d -p 6379:6379 redis:latest
 
 See [REDIS_QUICKSTART.md](./REDIS_QUICKSTART.md) for more details.
 
-### Database Migration Errors
+### Database Issues
 
 ```bash
-# Check migration status
-npx prisma migrate status
+# Database issues are rare with SQLite
+# Database file location: ~/.teams-cli/teams.db
 
-# Reset to clean state (development only!)
-npx prisma migrate reset
+# Delete database to reset (development only)
+rm -f ~/.teams-cli/teams.db
 
-# Resolve conflicts manually
-npx prisma migrate resolve --rolled-back migration_name
+# Check database integrity
+sqlite3 ~/.teams-cli/teams.db ".tables"
 ```
-
-### PostgreSQL Connection Issues
 
 ```
 Error: connect ECONNREFUSED 127.0.0.1:5432

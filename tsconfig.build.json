@@ -8,15 +8,9 @@
     "declaration": false,
     "types": ["node"]
   },
-  "include": ["src/cli/**/*", "src/utils/**/*", "src/index.ts"],
+  "include": ["src/**/*"],
   "exclude": [
     "**/*.test.ts",
-    "**/*.spec.ts",
-    "src/api",
-    "src/controllers",
-    "src/db",
-    "src/core",
-    "src/services",
-    "src/config"
+    "**/*.spec.ts"
   ]
 }

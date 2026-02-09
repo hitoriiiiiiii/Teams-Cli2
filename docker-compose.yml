@@ -1,3 +1,5 @@
+version: '3.9'
+
 services:
   app:
     build: .
@@ -5,18 +7,52 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: file:/app/.teams-cli/teams.db
+      REDIS_HOST: redis
+      REDIS_PORT: '6379'
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-teams-cli-local}
+      API_PORT: '3000'
     ports:
       - '3000:3000'
     volumes:
       - teams_cli_data:/app/.teams-cli
     entrypoint: ['./docker-entrypoint.sh']
     command: ['--help']
+    depends_on:
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ['CMD', 'node', 'dist/index.js', '--help']
       interval: 30s
       timeout: 10s
       retries: 3
+    networks:
+      - teams-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: teams_cli_redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    # Start Redis with AOF enabled; password is configured via env when needed
+    command: ["redis-server", "--appendonly", "yes"]
+    networks:
+      - teams-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
 volumes:
   teams_cli_data:
     driver: local
+  redis_data:
+    driver: local
+
+networks:
+  teams-network:
+    driver: bridge
