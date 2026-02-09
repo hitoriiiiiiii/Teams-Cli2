@@ -1,12 +1,9 @@
-import prisma from '../db/prisma';
 import { getCurrentUser } from '../utils/currentUser';
+import { isUserMemberOfTeam } from '../db/repositories';
 
 export async function ensureUserInTeam(userId: number, teamId: number) {
-  const member = await prisma.teamMember.findFirst({
-    where: { userId, teamId },
-  });
-
-  if (!member) {
+  const isMember = await isUserMemberOfTeam(userId, teamId);
+  if (!isMember) {
     throw new Error('❌ You are not a member of this team.');
   }
 }

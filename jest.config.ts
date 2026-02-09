@@ -18,6 +18,16 @@ const config: Config = {
     '^uuid$': '<rootDir>/__mocks__/uuid.js',
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  // Setup for temporary SQLite databases during tests
+  setupFilesAfterEnv: ['<rootDir>/src/test/setup.ts'],
+  // Use in-memory database for tests
+  testEnvironmentOptions: {
+    // Custom environment variables for tests
+    DATABASE_URL: ':memory:',
+  },
 };
+
+process.env.NODE_ENV = "test";
+process.env.TEAMS_CLI_MODE = "true";
 
 export default config;

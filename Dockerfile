@@ -1,17 +1,53 @@
-#Use official Node 20 image
+# Use official Node.js 20 Alpine image for smaller size
 FROM node:20-alpine
 
-#Set working directory
+# Install bash for better shell support
+RUN apk add --no-cache bash
+
+# Create app directory
 WORKDIR /app
 
-#Copy package.json and package-lock.json
+# Create directory for SQLite database
+RUN mkdir -p /app/.teams-cli
+
+# Copy package files
 COPY package*.json ./
 
-#Copy the rest of the application code (needed for build during install)
+# Install all dependencies (including dev dependencies for building)
+RUN npm ci && npm cache clean --force
+
+# Copy drizzle config and migrations
+COPY drizzle ./drizzle
+COPY drizzle.config.ts ./
+COPY docker-entrypoint.sh ./
+
+# Make entrypoint executable
+RUN chmod +x ./docker-entrypoint.sh
+
+# Copy source code
 COPY . .
 
-#Install dependencies (includes prepare/build scripts)
-RUN npm install
+# Build the TypeScript code
+RUN npm run build
 
-#Command to run the CLI application
-CMD ["node", "dist/cli/index.js"]
+# Remove dev dependencies after build
+RUN npm prune --production
+
+# Create a non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S teamscli -u 1001
+
+# Change ownership of the app directory and database directory
+RUN chown -R teamscli:nodejs /app
+USER teamscli
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV DATABASE_URL=file:/app/.teams-cli/teams.db
+
+# Expose port for API server (if used)
+EXPOSE 3000
+
+# Default command - run entrypoint script (can be overridden with arguments)
+ENTRYPOINT ["./docker-entrypoint.sh"]
+CMD ["--help"]

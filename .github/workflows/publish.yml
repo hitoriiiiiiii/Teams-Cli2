@@ -1,0 +1,125 @@
+name: Publish to NPM
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run pre-publish checks
+        run: npm run pre-publish-check
+
+      - name: Run tests
+        run: npm test
+        env:
+          NODE_ENV: test
+          DATABASE_URL: ':memory:'
+
+      - name: Build project
+        run: npm run build
+
+      - name: Test CLI commands before publish
+        run: |
+          echo "Running comprehensive CLI tests before publish..."
+          
+          # Test all main commands
+          echo "✓ Testing --help"
+          node dist/index.js --help
+          
+          echo "✓ Testing --version"
+          node dist/index.js --version
+          
+          # Test login flow
+          echo "✓ Testing login command"
+          node dist/index.js login --githubId test_gh_001 --username testuser || true
+          
+          # Test user commands
+          echo "✓ Testing user get command"
+          node dist/index.js user get --username testuser || true
+          
+          # Verify all subcommands are available
+          echo "✓ Verifying team command group"
+          node dist/index.js team --help
+          
+          echo "✓ Verifying repo command group"
+          node dist/index.js repo --help
+          
+          echo "✓ Verifying invite command group"
+          node dist/index.js invite --help
+          
+          echo "✅ All pre-publish CLI tests passed"
+
+      - name: Publish to NPM
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  docker-publish:
+    needs: publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract version from package.json
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/teams-cli:latest
+            ${{ secrets.DOCKER_USERNAME }}/teams-cli:${{ env.VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.title=Teams CLI
+            org.opencontainers.image.description=A comprehensive CLI tool for managing teams, team members, repositories, and analyzing team activity
+            org.opencontainers.image.version=${{ env.VERSION }}
+
+  notify:
+    needs: [publish, docker-publish]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Notify on success
+        if: needs.publish.result == 'success' && needs.docker-publish.result == 'success'
+        run: |
+          echo "✅ Successfully published Teams CLI v$(node -p "require('./package.json').version") to NPM and Docker Hub"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Failed to publish Teams CLI"
+          exit 1

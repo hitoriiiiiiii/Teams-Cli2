@@ -1,29 +1,31 @@
-import prisma from '../db/prisma';
+import { db } from '../db/index';
+import { commits } from '../db/schema';
+import { eq } from 'drizzle-orm';
 
 /**
- * Create commit if not exists
+ * Create or update commit
  */
 export async function upsertCommit(
   repoId: number,
   sha: string,
   message: string,
 ) {
-  return prisma.commit.upsert({
-    where: { sha },
-    update: {},
-    create: {
+  const existing = await db.select().from(commits).where(eq(commits.sha, sha)).limit(1);
+  if (existing.length > 0) {
+    return existing[0];
+  }
+  const result = await db
+    .insert(commits)
+    .values({
       sha,
       message,
       repoId,
-    },
-  });
+    })
+    .returning();
+  return result[0];
 }
 
-// get commits
-
+// Get commits by repo
 export async function getCommitsByRepo(repoId: number) {
-  return prisma.commit.findMany({
-    where: { repoId },
-    orderBy: { createdAt: 'desc' },
-  });
+  return db.select().from(commits).where(eq(commits.repoId, repoId));
 }

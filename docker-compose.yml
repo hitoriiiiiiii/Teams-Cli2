@@ -1,52 +1,22 @@
 services:
-  db:
-    image: postgres:15
-    container_name: teams_cli_db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: teams_cli
-    ports:
-      - '5432:5432'
-    volumes:
-      - db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    container_name: teams_cli_redis
-    ports:
-      - '6379:6379'
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   app:
     build: .
     container_name: teams_cli_app
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
-      DATABASE_URL: postgres://postgres:password@db:5432/teams_cli
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD:
-      API_PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: file:/app/.teams-cli/teams.db
     ports:
       - '3000:3000'
+    volumes:
+      - teams_cli_data:/app/.teams-cli
+    entrypoint: ["./docker-entrypoint.sh"]
+    command: ["--help"]
+    healthcheck:
+      test: ["CMD", "node", "dist/index.js", "--help"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
-  db_data:
-  redis_data:
+  teams_cli_data:
+    driver: local

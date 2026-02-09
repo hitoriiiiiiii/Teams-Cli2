@@ -1,33 +1,31 @@
-import prisma from '../db/prisma';
+import {
+  createRepo as createRepoRepo,
+  getReposByTeam as getReposByTeamRepo,
+  deleteRepoByFullName as deleteRepoByFullNameRepo,
+} from '../db/repositories';
 
 export interface RepoData {
-  githubId: number;
+  githubId: string;
   name: string;
   fullName: string;
-  private: boolean;
-  stars: number;
-  forks: number;
+  private?: boolean;
+  stars?: number;
+  forks?: number;
   teamId: number;
+  language?: string;
 }
 
 // Create a repository
 export async function createRepo(data: RepoData) {
-  return prisma.repo.create({ data });
+  return createRepoRepo(data);
 }
 
 // Get all repositories for a team
 export async function getReposByTeam(teamId: number) {
-  return prisma.repo.findMany({
-    where: { teamId },
-    orderBy: { createdAt: 'desc' },
-  });
+  return getReposByTeamRepo(teamId);
 }
 
-// Delete a repository by fullName
+// Delete a repository by fullName (CLI passes teamId, but repo deletion is by fullName)
 export async function deleteRepoByFullName(teamId: number, fullName: string) {
-  return prisma.repo.delete({
-    where: {
-      fullName,
-    },
-  });
+  return deleteRepoByFullNameRepo(fullName);
 }

@@ -11,8 +11,7 @@
   "include": [
     "src/cli/**/*",
     "src/utils/**/*",
-    "src/index.ts",
-    "src/command.ts"
+    "src/index.ts"
   ],
   "exclude": [
     "**/*.test.ts",

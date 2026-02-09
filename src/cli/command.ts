@@ -2,8 +2,8 @@ import { Command } from 'commander';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import { showHelp } from './help';
-import { loginWithGithub, logoutUser } from '../cli/auth';
-import { getGithubUser } from './github';
+import { logoutUser } from '../cli/auth';
+import { createUser, getUserByGithubId } from '../db/repositories';
 import {
   createRepo,
   getReposByTeam,
@@ -16,6 +16,8 @@ import {
   addUsertoTeam,
   removeUserFromTeam,
   getTeamById,
+  getTeamByName,
+  listTeams,
 } from '../controllers/team.controller';
 import {
   sendInvite,
@@ -26,7 +28,12 @@ import {
 } from '../controllers/invite.controller';
 import { computeMemberActivity, getTeamLeaderboard } from '../services/analytics.services';
 import { getGithubUserMetadata } from '../services/github.services';
-import prisma from '../db/prisma';
+import { db } from '../db/index';
+import { users, teamMembers, repos, commits, teams } from '../db/schema';
+import { eq, count, desc, and } from 'drizzle-orm';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 import { ensureUserInTeam, requireLogin } from './team';
 import { getUserByUsername } from '../controllers/user.controller';
 import { getCommits, getCommit } from '../controllers/commits.controller';
@@ -43,6 +50,11 @@ import {
   confirmAction,
 } from '../utils/inquirer';
 
+const dbDir = path.join(os.homedir(), '.teams-cli');
+const dbPath = path.join(dbDir, 'teams.db');
+
+fs.mkdirSync(dbDir, { recursive: true });
+process.env.DATABASE_URL = `file:${dbPath}`;
 const program = new Command();
 
 program
@@ -55,50 +67,23 @@ program
 program
   .command('login')
   .description('Login to Teams CLI')
-  .action(async () => {
-    const spinner = startSpinner(chalk.cyan('Logging in with GitHub...'), 'cyan');
-    
-    try {
-      await loginWithGithub();
-      const user = await getGithubUser();
-      
-      if (!user) {
-        spinner.fail(chalk.red.bold('✗ Failed to get user data'));
-        return;
-      }
-      
-      spinner.succeed(chalk.green.bold('✓ Login successful'));
-      
-      // Fetch GitHub metadata
-      const metadata = await getGithubUserMetadata(user.username);
-      
-      logger.header(`Welcome, ${metadata.name || metadata.username}!`);
-      
-      console.log(chalk.cyan.bold('\n📊 GitHub Statistics\n'));
-      console.log(chalk.yellow('Username        :') + chalk.cyan.bold(` ${metadata.username}`));
-      console.log(chalk.yellow('Name            :') + chalk.cyan.bold(` ${metadata.name}`));
-      console.log(chalk.yellow('Location        :') + chalk.cyan.bold(` ${metadata.location}`));
-      console.log(chalk.yellow('Company         :') + chalk.cyan.bold(` ${metadata.company}`));
-      console.log(chalk.yellow('Bio             :') + chalk.cyan.bold(` ${metadata.bio}`));
-      
-      console.log(chalk.cyan.bold('\n📈 Repository Statistics\n'));
-      console.log(chalk.yellow('Total Repos     :') + chalk.cyan.bold(` ${metadata.totalRepos}`));
-      console.log(chalk.yellow('Public Repos    :') + chalk.cyan.bold(` ${metadata.publicRepos}`));
-      console.log(chalk.yellow('Total Stars     :') + chalk.cyan.bold(` ${metadata.totalStars}`));
-      console.log(chalk.yellow('Total Forks     :') + chalk.cyan.bold(` ${metadata.totalForks}`));
-      
-      console.log(chalk.cyan.bold('\n👥 Social\n'));
-      console.log(chalk.yellow('Followers       :') + chalk.cyan.bold(` ${metadata.followers}`));
-      console.log(chalk.yellow('Following       :') + chalk.cyan.bold(` ${metadata.following}`));
-      
-      console.log(chalk.cyan.bold('\n🔗 Profile\n'));
-      console.log(chalk.yellow('GitHub Profile  :') + chalk.cyan.bold(` ${metadata.profileUrl}`));
-      console.log(chalk.yellow('Member Since    :') + chalk.cyan.bold(` ${new Date(metadata.createdAt).toLocaleDateString()}`));
-      
-    } catch (error) {
-      spinner.fail(chalk.red.bold('✗ Login failed'));
-      console.error(error);
+  .option('-g, --githubId <githubId>', 'GitHub ID')
+  .option('-u, --username <username>', 'Username')
+  .action(async (opts) => {
+    const githubId = opts.githubId;
+    const username = opts.username;
+
+    if (!githubId || !username) {
+      console.error('githubId and username are required');
+      return;
     }
+
+    let user = await getUserByGithubId(githubId);
+    if (!user) {
+      user = await createUser(githubId, username);
+    }
+
+    console.log('Logged in successfully');
   });
 
 program
@@ -156,10 +141,15 @@ user
     try {
       let user;
       if (userId) {
-        user = await prisma.user.findUnique({
-          where: { id: Number(userId) },
-          include: { teams: { include: { team: true } } },
-        });
+        const userResult = await db.select({
+          id: users.id,
+          githubId: users.githubId,
+          username: users.username,
+          email: users.email,
+          activityStatus: users.activityStatus,
+          createdAt: users.createdAt,
+        }).from(users).where(eq(users.id, Number(userId))).limit(1);
+        user = userResult[0];
       } else {
         user = await getUserByUsername(username as string);
       }
@@ -265,12 +255,18 @@ team
         return;
       }
 
-      const memberCount = await prisma.teamMember.count({
-        where: { teamId: Number(teamId) },
-      });
-      const repoCount = await prisma.repo.count({
-        where: { teamId: Number(teamId) },
-      });
+      const memberResult = await db
+        .select({ count: count() })
+        .from(teamMembers)
+        .where(eq(teamMembers.teamId, Number(teamId)));
+
+      const repoResult = await db
+        .select({ count: count() })
+        .from(repos)
+        .where(eq(repos.teamId, Number(teamId)));
+
+      const memberCount = memberResult[0].count;
+      const repoCount = repoResult[0].count;
 
       spinner.succeed(chalk.green.bold('✓ Team details fetched'));
       logger.header(`Team: ${team.name}`);
@@ -532,14 +528,19 @@ repo
     try {
       const user = getCurrentUser();
 
-      const team = await prisma.team.findFirst({ where: { name: teamName } });
+      const teamResult = await db
+        .select()
+        .from(teams)
+        .where(eq(teams.name, teamName));
+
+      const team = teamResult[0];
       if (!team) {
         spinner.fail(chalk.red.bold('Team not found'));
         return;
       }
 
       const repoData = {
-        githubId: Math.floor(Math.random() * 1000000),
+        githubId: Math.floor(Math.random() * 1000000).toString(),
         name: repoName,
         fullName: `${user.username}/${repoName}`,
         private: false,
@@ -572,9 +573,12 @@ repo
     );
 
     try {
-      const team = await prisma.team.findFirst({
-        where: { name: teamName },
-      });
+      const teamResult = await db
+        .select()
+        .from(teams)
+        .where(eq(teams.name, teamName));
+
+      const team = teamResult[0];
 
       if (!team) {
         spinner.fail(chalk.red.bold('Team not found'));
@@ -627,9 +631,8 @@ repo
       return;
     }
 
-    const team = await prisma.team.findFirst({
-      where: { name: finalTeamName },
-    });
+    const teamResult = await db.select().from(teams).where(eq(teams.name, finalTeamName)).limit(1);
+    const team = teamResult[0];
     if (!team) {
       logger.error('Team not found');
       return;
@@ -721,7 +724,7 @@ invite
 
       spinner.succeed(chalk.green.bold('✓ Invite accepted'));
       logger.title('Team Joined');
-      console.log(chalk.yellow('Team:') + chalk.cyan.bold(` ${invite.team.name}`));
+      console.log(chalk.yellow('Team:') + chalk.cyan.bold(` ${invite.team?.name}`));
     } catch (error: any) {
       spinner.fail(chalk.red.bold('Failed to accept invite'));
       logger.error(error.message);
@@ -803,9 +806,9 @@ invite
   });
 //commits commands
 
-const commits = program.command('commits').description('Commits Management');
+const commitsCmd = program.command('commits').description('Commits Management');
 
-commits
+commitsCmd
   .command('list <owner> <repo>')
   .description('List commits for a repository')
   .option('-a, --author <author>', 'Filter commits by author')
@@ -841,7 +844,7 @@ commits
   });
 
 // Get a single commit by SHA
-commits
+commitsCmd
   .command('get <owner> <repo> <sha>')
   .description('Get details of a specific commit')
   .action(async (owner, repo, sha) => {
@@ -869,7 +872,7 @@ commits
       );
       console.log(
         chalk.yellow('Date    :') +
-          chalk.cyan.bold(` ${(commit as any).date || commit.createdAt}`),
+          chalk.cyan.bold(` ${(commit as any).date || (commit as any).createdAt}`),
       );
       console.log(
         chalk.yellow('Files   :') +
@@ -913,10 +916,11 @@ analytics
       await computeMemberActivity(Number(teamId));
 
       // Fetch updated member data with activity status
-      const data = await prisma.teamMember.findMany({
-        where: { teamId: Number(teamId) },
-        include: { user: true },
-      });
+      const data = await db
+        .select()
+        .from(teamMembers)
+        .where(eq(teamMembers.teamId, Number(teamId)))
+        .leftJoin(users, eq(teamMembers.userId, users.id));
 
       spinner.succeed(chalk.green.bold('✓ Activity computed'));
       logger.title('📊 Member Activity');
@@ -967,9 +971,12 @@ analytics
       logger.title('🏆 Team Leaderboard');
 
       for (let i = 0; i < leaderboard.length; i++) {
-        const user = await prisma.user.findUnique({
-          where: { id: leaderboard[i].authorId! },
-        });
+        const userResult = await db
+          .select()
+          .from(users)
+          .where(eq(users.githubId, leaderboard[i].authorId!));
+
+        const user = userResult[0];
 
         console.log(
           chalk.yellow(`#${i + 1}`) +
@@ -1009,9 +1016,12 @@ analytics
 
     try {
       // Find user by username in the database
-      const user = await prisma.user.findFirst({
-        where: { username },
-      });
+      const userResult = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, username));
+
+      const user = userResult[0];
 
       if (!user) {
         spinner.fail(chalk.red.bold(`User ${username} not found in database`));
@@ -1019,39 +1029,42 @@ analytics
       }
 
       // Verify user is a member of the team
-      const isMember = await prisma.teamMember.findFirst({
-        where: {
-          userId: user.id,
-          teamId: Number(teamId),
-        },
-      });
+      const isMemberResult = await db
+        .select()
+        .from(teamMembers)
+        .where(and(eq(teamMembers.userId, user.id), eq(teamMembers.teamId, Number(teamId))));
+
+      const isMember = isMemberResult[0];
 
       if (!isMember) {
         spinner.warn(chalk.yellow.bold(`${username} is not a member of this team`));
         return;
       }
 
-      const commits = await prisma.commit.count({
-        where: {
-          authorId: user.id,
-          repo: { teamId: Number(teamId) },
-        },
-      });
+      const commitsResult = await db
+        .select({ count: count() })
+        .from(commits)
+        .leftJoin(repos, eq(commits.repoId, repos.id))
+        .where(and(eq(commits.author, user.githubId), eq(repos.teamId, Number(teamId))));
 
-      const lastCommit = await prisma.commit.findFirst({
-        where: {
-          authorId: user.id,
-          repo: { teamId: Number(teamId) },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
+      const commitCount = commitsResult[0].count;
+
+      const lastCommitResult = await db
+        .select()
+        .from(commits)
+        .leftJoin(repos, eq(commits.repoId, repos.id))
+        .where(and(eq(commits.author, user.githubId), eq(repos.teamId, Number(teamId))))
+        .orderBy(desc(commits.createdAt))
+        .limit(1);
+
+      const lastCommit = lastCommitResult[0];
 
       spinner.succeed(chalk.green.bold('✓ Analytics ready'));
       logger.title(`📈 ${username} Analytics`);
 
-      console.log(chalk.yellow('Total Commits: ') + commits);
+      console.log(chalk.yellow('Total Commits: ') + commitCount);
       console.log(
-        chalk.yellow('Last Active  : ') + (lastCommit?.createdAt || 'Never'),
+        chalk.yellow('Last Active  : ') + (lastCommit?.commits.createdAt || 'Never'),
       );
     } catch (err) {
       spinner.fail(chalk.red.bold('Failed to fetch member analytics'));
@@ -1077,19 +1090,18 @@ analytics
     );
 
     try {
-      const members = await prisma.teamMember.count({
-        where: { teamId: Number(teamId) },
-      });
+      const membersResult = await db.select({ count: count() }).from(teamMembers).where(eq(teamMembers.teamId, Number(teamId)));
+      const members = membersResult[0].count;
 
-      const commits = await prisma.commit.count({
-        where: { repo: { teamId: Number(teamId) } },
-      });
+      const commitsResult = await db.select({ count: count() }).from(commits).leftJoin(repos, eq(commits.repoId, repos.id)).where(eq(repos.teamId, Number(teamId)));
+
+      const commitsCount = commitsResult[0].count;
 
       spinner.succeed(chalk.green.bold('✓ Summary ready'));
       logger.title('📊 Team Summary');
 
       console.log(chalk.cyan('Members : ') + members);
-      console.log(chalk.cyan('Commits : ') + commits);
+      console.log(chalk.cyan('Commits : ') + commitsCount);
     } catch (err) {
       spinner.fail(chalk.red.bold('Failed to generate summary'));
       console.error(err);

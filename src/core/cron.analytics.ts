@@ -1,14 +1,16 @@
 import cron from 'node-cron';
-import prisma from '../db/prisma';
+import { db } from '../db/index';
+import { teams } from '../db/schema';
 import { computeMemberActivity } from '../services/analytics.services';
 
 export function startAnalyticsCron() {
   cron.schedule('0 * * * *', async () => {
     console.log('⏱ Running team analytics cron');
 
-    const teams = await prisma.team.findMany();
+    const teamResults = await db.select().from(teams);
+    const teamsData = teamResults;
 
-    for (const team of teams) {
+    for (const team of teamsData) {
       await computeMemberActivity(team.id);
     }
   });

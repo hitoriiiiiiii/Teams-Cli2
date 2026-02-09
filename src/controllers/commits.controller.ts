@@ -1,5 +1,8 @@
-import axios from 'axios';
-import prisma from '../db/prisma';
+import axios from "axios";
+import { eq } from "drizzle-orm";
+
+import { db as defaultDb } from "../db/index";
+import { repos, commits as commitsTable } from "../db/schema";
 
 export interface GitHubCommit {
   sha: string;
@@ -7,19 +10,18 @@ export interface GitHubCommit {
   author: string;
   date: string;
   files?: string[];
-  createdAt?: Date;
 }
 
-// Fetch all commits from GitHub
 export async function getCommits(
   owner: string,
   repo: string,
-  author?: string,
+  author?: string
 ): Promise<GitHubCommit[]> {
   try {
     const url = `https://api.github.com/repos/${owner}/${repo}/commits${
-      author ? `?author=${author}` : ''
+      author ? `?author=${author}` : ""
     }`;
+
     const response = await axios.get(url);
 
     return response.data.map((c: any) => ({
@@ -30,54 +32,61 @@ export async function getCommits(
       files: c.files?.map((f: any) => f.filename) || [],
     }));
   } catch (err: any) {
-    console.error('❌ Failed to fetch commits from GitHub:', err.message);
+    console.error("Failed to fetch commits:", err.message);
     return [];
   }
 }
 
-// Fetch a single commit, first from DB, then GitHub if not found
-export async function getCommit(owner: string, repo: string, sha: string) {
+export async function getCommit(
+  owner: string,
+  repo: string,
+  sha: string,
+  db = defaultDb
+) {
   try {
-    // 1. Try DB
-    let commit = await prisma.commit.findUnique({ where: { sha } });
+    const commitResult = await db
+      .select()
+      .from(commitsTable)
+      .where(eq(commitsTable.sha, sha))
+      .limit(1);
+
+    const commit = commitResult[0];
 
     if (commit) {
-      return { ...commit, source: 'db' };
+      return { ...commit, source: "db" };
     }
 
-    // 2. Fetch from GitHub
     const githubCommits = await getCommits(owner, repo);
     const ghCommit = githubCommits.find((c) => c.sha === sha);
 
     if (!ghCommit) return null;
 
-    // 3. Try to find repo in DB (optional: only save if repo exists)
-    const repoRecord = await prisma.repo.findFirst({
-      where: { fullName: `${owner}/${repo}` },
-    });
+    const repoResult = await db
+      .select()
+      .from(repos)
+      .where(eq(repos.fullName, `${owner}/${repo}`))
+      .limit(1);
 
-    // Only save to DB if repo exists in database
+    const repoRecord = repoResult[0];
+
     if (repoRecord) {
       try {
-        await prisma.commit.create({
-          data: {
-            sha: ghCommit.sha,
-            message: ghCommit.message,
-            repoId: repoRecord.id,
-            createdAt: new Date(ghCommit.date),
-          },
+        await db.insert(commitsTable).values({
+          sha: ghCommit.sha,
+          message: ghCommit.message,
+          repoId: repoRecord.id,
+          createdAt: new Date(ghCommit.date).toISOString(),
         });
       } catch (dbErr: any) {
-        // Log but don't fail if commit already exists
-        if (!dbErr.message?.includes('Unique constraint failed')) {
-          console.warn('⚠️ Could not save commit to DB:', dbErr.message);
+        if (!dbErr.message?.includes("UNIQUE constraint failed")) {
+          console.warn("Could not save commit:", dbErr.message);
         }
       }
     }
 
-    return { ...ghCommit, source: 'github' };
+    return { ...ghCommit, source: "github" };
   } catch (err: any) {
-    console.error('❌ Failed to fetch commit:', err.message);
+    console.error("Failed to fetch commit:", err.message);
     return null;
   }
 }

@@ -1,158 +1,123 @@
-import prisma from '../db/prisma';
+import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { checkInviteRateLimit, getInviteRateLimitRemaining } from '../api/rateLimiter';
 
-/**
- * Send an invite to a user to join a team
- */
-export async function sendInvite(
-  teamId: number,
-  invitedBy: number,
-  targetUsername: string,
-) {
-  // Check rate limit
-  const withinLimit = await checkInviteRateLimit(invitedBy, teamId);
-  if (!withinLimit) {
-    const remaining = await getInviteRateLimitRemaining(invitedBy, teamId);
-    throw new Error(
-      `Rate limit exceeded. You can send max 10 invites per hour per team. Remaining: ${remaining}`
-    );
-  }
+import {
+  createInvite as createInviteRepo,
+  getInviteByCode as getInviteByCodeRepo,
+  getInviteWithDetails as getInviteWithDetailsRepo,
+  getPendingInvitesForTeam as getPendingInvitesForTeamRepo,
+  updateInviteStatus as updateInviteStatusRepo,
+} from '../db/repositories/invite.repository';
+import { addUserToTeam } from '../db/repositories/team.repository';
+import { getInviteRateLimitRemaining } from '../api/rateLimiter';
 
-  // Verify the inviter is a member of the team
-  const member = await prisma.teamMember.findFirst({
-    where: { userId: invitedBy, teamId },
-  });
-
-  if (!member) {
-    throw new Error('You are not a member of this team');
-  }
-
-  // Generate unique invite code
-  const code = uuidv4().substring(0, 8).toUpperCase();
-
-  // Create invite record
-  const invite = await prisma.invite.create({
-    data: {
-      code,
-      teamId,
-      invitedBy,
-      invitedUser: targetUsername,
-      status: 'PENDING',
-    },
-    include: {
-      team: true,
-      inviter: true,
-    },
-  });
-
-  return invite;
+function normalizeCode(codeParam: string | string[] | undefined): string {
+  if (!codeParam) return '';
+  return Array.isArray(codeParam) ? codeParam[0] : codeParam;
 }
 
-/**
- * Accept an invite and add user to team
- */
+// HTTP handlers (Express)
+export async function sendInviteHandler(req: Request, res: Response) {
+  try {
+    const { teamId, invitedUser } = req.body;
+    const inviterId = (req as any).user?.id;
+
+    if (!inviterId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const remaining = await getInviteRateLimitRemaining(inviterId, teamId);
+    if (remaining <= 0) return res.status(429).json({ error: 'Invite rate limit exceeded' });
+
+    const code = uuidv4();
+    const invite = await createInviteRepo({ code, teamId, invitedBy: inviterId, invitedUser });
+
+    return res.json({ success: true, invite: { code: invite.code } });
+  } catch (e) {
+    console.error('sendInvite error', e);
+    return res.status(500).json({ error: 'Internal error' });
+  }
+}
+
+export async function acceptInviteHandler(req: Request, res: Response) {
+  try {
+    const code = normalizeCode(req.params.code);
+    const userId = (req as any).user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const invite = await getInviteByCodeRepo(code);
+    if (!invite) return res.status(404).json({ error: 'Invite not found' });
+    if (invite.status !== 'PENDING') return res.status(400).json({ error: 'Invite not pending' });
+
+    await addUserToTeam(userId, invite.teamId);
+    await updateInviteStatusRepo(code, 'ACCEPTED', new Date().toISOString());
+
+    return res.json({ success: true });
+  } catch (e) {
+    console.error('acceptInvite error', e);
+    return res.status(500).json({ error: 'Internal error' });
+  }
+}
+
+export async function getInviteHandler(req: Request, res: Response) {
+  try {
+    const code = normalizeCode(req.params.code);
+    const invite = await getInviteByCodeRepo(code);
+    if (!invite) return res.status(404).json({ error: 'Invite not found' });
+    return res.json({ invite });
+  } catch (e) {
+    console.error('getInvite error', e);
+    return res.status(500).json({ error: 'Internal error' });
+  }
+}
+
+export async function rejectInviteHandler(req: Request, res: Response) {
+  try {
+    const code = normalizeCode(req.params.code);
+    const userId = (req as any).user?.id;
+
+    const invite = await getInviteByCodeRepo(code);
+    if (!invite) return res.status(404).json({ error: 'Invite not found' });
+    if (invite.invitedBy !== userId) return res.status(403).json({ error: 'Forbidden' });
+
+    await updateInviteStatusRepo(code, 'REJECTED');
+    return res.json({ success: true });
+  } catch (e) {
+    console.error('rejectInvite error', e);
+    return res.status(500).json({ error: 'Internal error' });
+  }
+}
+
+// Programmatic API used by CLI
+export async function sendInvite(teamId: number, inviterId: number, invitedUser: string) {
+  const remaining = await getInviteRateLimitRemaining(inviterId, teamId);
+  if (remaining <= 0) throw new Error('Invite rate limit exceeded');
+  const code = uuidv4();
+  return createInviteRepo({ code, teamId, invitedBy: inviterId, invitedUser });
+}
+
 export async function acceptInvite(code: string, userId: number) {
-  const invite = await prisma.invite.findUnique({
-    where: { code },
-    include: { team: true },
-  });
+  const invite = await getInviteWithDetailsRepo(code);
+  if (!invite) throw new Error('Invite not found');
+  if (invite.invite.status !== 'PENDING') throw new Error('Invite not pending');
 
-  if (!invite) {
-    throw new Error('Invalid invite code');
-  }
+  await addUserToTeam(userId, invite.invite.teamId);
+  await updateInviteStatusRepo(code, 'ACCEPTED', new Date().toISOString());
 
-  if (invite.status !== 'PENDING') {
-    throw new Error(`Invite is already ${invite.status.toLowerCase()}`);
-  }
-
-  // Check if invite has expired
-  if (new Date() > invite.expiresAt) {
-    await prisma.invite.update({
-      where: { id: invite.id },
-      data: { status: 'EXPIRED' },
-    });
-    throw new Error('Invite has expired');
-  }
-
-  // Check if user is already a member
-  const existingMember = await prisma.teamMember.findFirst({
-    where: { userId, teamId: invite.teamId },
-  });
-
-  if (existingMember) {
-    throw new Error('You are already a member of this team');
-  }
-
-  // Add user to team
-  await prisma.teamMember.create({
-    data: {
-      userId,
-      teamId: invite.teamId,
-    },
-  });
-
-  // Update invite status
-  const acceptedInvite = await prisma.invite.update({
-    where: { id: invite.id },
-    data: {
-      status: 'ACCEPTED',
-      acceptedAt: new Date(),
-    },
-    include: { team: true },
-  });
-
-  return acceptedInvite;
+  return getInviteWithDetailsRepo(code);
 }
 
-/**
- * List pending invites for a team
- */
 export async function getTeamInvites(teamId: number, status?: string) {
-  return prisma.invite.findMany({
-    where: {
-      teamId,
-      status: status ? (status.toUpperCase() as any) : undefined,
-    },
-    include: {
-      inviter: true,
-      team: true,
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+  // Repository currently only supports pending invites; ignore status parameter
+  return getPendingInvitesForTeamRepo(teamId);
 }
 
-/**
- * Reject an invite
- */
-export async function rejectInvite(code: string) {
-  const invite = await prisma.invite.findUnique({
-    where: { code },
-  });
-
-  if (!invite) {
-    throw new Error('Invalid invite code');
-  }
-
-  if (invite.status !== 'PENDING') {
-    throw new Error(`Invite is already ${invite.status.toLowerCase()}`);
-  }
-
-  return prisma.invite.update({
-    where: { id: invite.id },
-    data: { status: 'REJECTED' },
-  });
-}
-
-/**
- * Get invite details by code
- */
 export async function getInviteByCode(code: string) {
-  return prisma.invite.findUnique({
-    where: { code },
-    include: {
-      team: true,
-      inviter: true,
-    },
-  });
+  return getInviteByCodeRepo(code);
+}
+
+export async function rejectInvite(code: string) {
+  const invite = await getInviteByCodeRepo(code);
+  if (!invite) throw new Error('Invalid invite code');
+  if (!invite.status) throw new Error('Invalid invite status');
+  if (invite.status !== 'PENDING') throw new Error(`Invite is already ${String(invite.status).toLowerCase()}`);
+  return updateInviteStatusRepo(code, 'REJECTED');
 }

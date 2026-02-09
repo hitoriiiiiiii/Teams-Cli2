@@ -5,8 +5,18 @@ import {
   deleteRepoByFullName,
   getReposByTeam,
 } from '../controllers/repo.controller';
-import { User } from "@prisma/client";
-import prisma from '../db/prisma';
+import { db } from '../db/index';
+import { users } from '../db/schema';
+import { eq } from 'drizzle-orm';
+
+type User = {
+  id: number;
+  githubId: string;
+  username: string;
+  email?: string;
+  activityStatus: string;
+  createdAt: string | null;
+};
 const GITHUB_API = 'https://api.github.com';
 
 /**
@@ -144,22 +154,22 @@ export async function getGithubUserMetadata(username: string) {
 export async function getOrCreateUser(
 username: string
 ): Promise<User> {
-let user = await prisma.user.findFirst({
-where: { username },
-});
-
+const userResult = await db.select().from(users).where(eq(users.username, username)).limit(1);
+let user = userResult[0];
 
 if (!user) {
-user = await prisma.user.create({
-data: {
-username,
-githubId: username,
-email: `${username}@github.local`,
-},
-});
+  const insertResult = await db.insert(users).values({
+    username,
+    githubId: username,
+    email: `${username}@github.local`,
+  }).returning();
+  user = insertResult[0];
 }
 
 
-// ✅ THIS WAS MISSING
-return user;
+return {
+  ...user,
+  email: user.email || undefined,
+  activityStatus: user.activityStatus || 'ACTIVE',
+};
 }
