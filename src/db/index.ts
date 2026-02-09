@@ -21,6 +21,6 @@ export let db = drizzle(sqlite, { schema });
 
 // Helper to inject a different Drizzle instance (used by tests)
 export function setDb(newDb: typeof db) {
-  // @ts-expect-error - allow runtime replacement in tests
+    // @ts-ignore
   db = newDb;
 }
