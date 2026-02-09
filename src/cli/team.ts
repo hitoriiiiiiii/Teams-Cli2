@@ -1,5 +1,5 @@
-import { getCurrentUser } from '../utils/currentUser';
-import { isUserMemberOfTeam } from '../db/repositories';
+import { getCurrentUser } from '../utils/currentUser.js';
+import { isUserMemberOfTeam } from '../db/repositories/index.js';
 
 export async function ensureUserInTeam(userId: number, teamId: number) {
   const isMember = await isUserMemberOfTeam(userId, teamId);

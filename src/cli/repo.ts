@@ -1,12 +1,12 @@
 import ora from 'ora';
 import chalk from 'chalk';
-import { askRepoDetails, confirmAction } from '../utils/inquirer';
+import { askRepoDetails, confirmAction } from '../utils/inquirer.js';
 import {
   connectRepo,
   disconnectRepo,
   listRepos,
-} from '../services/github.services';
-import { requireLogin } from './team';
+} from '../services/github.services.js';
+import { requireLogin } from './team.js';
 
 /**
  * Connect a GitHub repository

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import 'dotenv/config';
-import './cli/command';
+import './cli/command.js';
 
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled rejection:', err);

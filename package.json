@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "@prarthana25/teams-cli",
   "version": "1.0.7",
   "description": "A comprehensive CLI tool for managing teams, team members, repositories, and analyzing team activity with GitHub OAuth integration",
@@ -64,7 +65,7 @@
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.6.2",
-    "chalk": "^5.6.2",
+    "chalk": "^4.1.2",
     "commander": "^14.0.2",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",

@@ -7,9 +7,9 @@ import {
   getInviteWithDetails as getInviteWithDetailsRepo,
   getPendingInvitesForTeam as getPendingInvitesForTeamRepo,
   updateInviteStatus as updateInviteStatusRepo,
-} from '../db/repositories/invite.repository';
-import { addUserToTeam } from '../db/repositories/team.repository';
-import { getInviteRateLimitRemaining } from '../api/rateLimiter';
+} from '../db/repositories/invite.repository.js';
+import { addUserToTeam } from '../db/repositories/team.repository.js';
+import { getInviteRateLimitRemaining } from '../api/rateLimiter.js';
 
 function normalizeCode(codeParam: string | string[] | undefined): string {
   if (!codeParam) return '';

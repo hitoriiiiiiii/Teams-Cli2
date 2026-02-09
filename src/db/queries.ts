@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db } from './index';
-import { users, teams, teamMembers, invites } from './schema';
+import { db } from './index.js';
+import { users, teams, teamMembers, invites } from './schema.js';
 
 // Create a new user
 export async function createUser(

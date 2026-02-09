@@ -5,8 +5,8 @@ import {
   deleteRepoByFullName,
   getReposByTeam,
 } from '../controllers/repo.controller';
-import { db } from '../db/index';
-import { users } from '../db/schema';
+import { db } from '../db/index.js';
+import { users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 
 type User = {

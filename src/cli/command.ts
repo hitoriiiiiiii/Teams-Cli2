@@ -1,42 +1,42 @@
 import { Command } from 'commander';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
-import { showHelp } from './help';
-import { logoutUser, loginWithGithub } from '../cli/auth';
+import { showHelp } from './help.js';
+import { logoutUser, loginWithGithub } from '../cli/auth.js';
 import {
   createRepo,
   getReposByTeam,
   deleteRepoByFullName,
-} from '../controllers/repo.controller';
-import { getCurrentUser } from '../utils/currentUser';
+} from '../controllers/repo.controller.js';
+import { getCurrentUser } from '../utils/currentUser.js';
 import {
   createTeam,
   getTeamByUser,
   addUsertoTeam,
   removeUserFromTeam,
   getTeamById,
-} from '../controllers/team.controller';
+} from '../controllers/team.controller.js';
 import {
   sendInvite,
   acceptInvite,
   getTeamInvites,
   rejectInvite,
-} from '../controllers/invite.controller';
+} from '../controllers/invite.controller.js';
 import {
   computeMemberActivity,
   getTeamLeaderboard,
-} from '../services/analytics.services';
-import { db } from '../db/index';
-import { users, teamMembers, repos, commits, teams } from '../db/schema';
+} from '../services/analytics.services.js';
+import { db } from '../db/index.js';
+import { users, teamMembers, repos, commits, teams } from '../db/schema.js';
 import { eq, count, desc, and } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { ensureUserInTeam, requireLogin } from './team';
-import { getUserByUsername } from '../controllers/user.controller';
-import { getCommits, getCommit } from '../controllers/commits.controller';
-import { logger } from '../utils/logger';
-import { startSpinner } from '../utils/spinner';
+import { ensureUserInTeam, requireLogin } from './team.js';
+import { getUserByUsername } from '../controllers/user.controller.js';
+import { getCommits, getCommit } from '../controllers/commits.controller.js';
+import { logger } from '../utils/logger.js';
+import { startSpinner } from '../utils/spinner.js';
 import {
   askTeamName,
   askGithubUsername,
@@ -46,7 +46,7 @@ import {
   askInviteCode,
   askConfigKeyValue,
   confirmAction,
-} from '../utils/inquirer';
+} from '../utils/inquirer.js';
 
 const dbDir = path.join(os.homedir(), '.teams-cli');
 const dbPath = path.join(dbDir, 'teams.db');

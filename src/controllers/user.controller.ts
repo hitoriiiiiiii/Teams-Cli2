@@ -1,7 +1,7 @@
 import {
   upsertGitHubUser as upsertUser,
   getUserByUsername as getUser,
-} from '../db/repositories';
+} from '../db/repositories/index.js';
 
 type GitHubUser = {
   githubId: string;
