@@ -19,13 +19,12 @@ RUN npm ci && npm cache clean --force
 # Copy drizzle config and migrations
 COPY drizzle ./drizzle
 COPY drizzle.config.ts ./
-COPY docker-entrypoint.sh ./
 
-# Make entrypoint executable
-RUN chmod +x ./docker-entrypoint.sh
-
-# Copy source code
+# Copy source code (copy everything including entrypoint)
 COPY . .
+
+# Make entrypoint executable after copying project files (ensures bit isn't overwritten)
+RUN chmod +x ./docker-entrypoint.sh
 
 # Build the TypeScript code
 RUN npm run build
@@ -49,5 +48,5 @@ ENV DATABASE_URL=file:/app/.teams-cli/teams.db
 EXPOSE 3000
 
 # Default command - run entrypoint script (can be overridden with arguments)
-ENTRYPOINT ["./docker-entrypoint.sh"]
+ENTRYPOINT ["sh", "/app/docker-entrypoint.sh"]
 CMD ["--help"]

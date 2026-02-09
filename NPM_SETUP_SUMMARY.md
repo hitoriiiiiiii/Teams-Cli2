@@ -10,6 +10,7 @@
 ## 📦 What's Been Setup
 
 ### 1. ✅ Package Configuration
+
 - **Updated package.json** with comprehensive npm metadata
 - **Added bin command** - Users can run `teams` globally after installation
 - **Added scripts** for building, testing, linting, and publishing
@@ -18,6 +19,7 @@
 - **Added engines** to specify Node 18+ requirement
 
 ### 2. ✅ NPM Publishing Scripts
+
 ```bash
 npm run build            # Compile TypeScript to JavaScript
 npm run pub             # Publish to npm (production)
@@ -29,7 +31,9 @@ npm run version:major   # Bump major version (1.0.0 → 2.0.0)
 ```
 
 ### 3. ✅ .npmignore File
+
 Configured to exclude:
+
 - Source files (src/, test/)
 - Configuration files
 - Development dependencies
@@ -41,9 +45,11 @@ Configured to exclude:
 - IDE files
 
 ### 4. ✅ NPM Services Module
+
 **File:** `src/services/npm.services.ts`
 
 Features:
+
 - ✅ Check package availability on npm
 - ✅ Get package information from npm registry
 - ✅ Retrieve download statistics
@@ -56,9 +62,11 @@ Features:
 - ✅ Check npm authentication
 
 ### 5. ✅ Pre-Publish Checklist Script
+
 **File:** `scripts/pre-publish-check.js`
 
 Validates:
+
 - ✅ Package name format and availability
 - ✅ Version follows semantic versioning
 - ✅ All required fields present
@@ -71,11 +79,13 @@ Validates:
 - ✅ Dependencies configured
 
 ### 6. ✅ Documentation Files Created
+
 1. **NPM_PUBLISHING_GUIDE.md** - Complete publishing guide
 2. **LICENSE** - MIT License (standard open source)
 3. **Updated README.md** - Installation and usage instructions
 
 ### 7. ✅ TypeScript Build
+
 - ✅ Compiles to dist/ directory
 - ✅ ES2020 target configured
 - ✅ No compilation errors
@@ -86,7 +96,9 @@ Validates:
 ## 🚀 Quick Publishing Steps
 
 ### Step 1: Update Your Information
+
 Edit package.json:
+
 ```json
 {
   "author": "hitoriiiiiiii (https://github.com/hitoriiiiiiii)",
@@ -98,24 +110,29 @@ Edit package.json:
 ```
 
 ### Step 2: Create NPM Account
+
 Visit: https://www.npmjs.com/signup
 
 ### Step 3: Login to NPM
+
 ```bash
 npm login
 ```
 
 ### Step 4: Run Pre-Publish Check
+
 ```bash
 npm run precheck
 ```
 
 ### Step 5: Update Version
+
 ```bash
 npm run version:patch
 ```
 
 ### Step 6: Publish
+
 ```bash
 npm run pub
 ```
@@ -139,12 +156,7 @@ npm run pub
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE",
-    "package.json"
-  ],
+  "files": ["dist", "README.md", "LICENSE", "package.json"],
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
@@ -182,43 +194,43 @@ npm run pub
 
 ```typescript
 // Check if package name is available
-await checkPackageAvailability('package-name')
+await checkPackageAvailability('package-name');
 // Returns: { available: boolean, version?, description? }
 
 // Get package info from npm
-await getPackageInfo('package-name')
+await getPackageInfo('package-name');
 // Returns: Full package metadata
 
 // Get download statistics
-await getDownloadStats('package-name', 'last-month')
+await getDownloadStats('package-name', 'last-month');
 // Returns: Download count and period info
 
 // Search npm packages
-await searchPackages('query', limit)
+await searchPackages('query', limit);
 // Returns: Array of matching packages
 
 // Get latest version
-await getLatestVersion('package-name')
+await getLatestVersion('package-name');
 // Returns: Latest semantic version
 
 // Validate package.json
-validatePackageJson(pkg)
+validatePackageJson(pkg);
 // Returns: { valid: boolean, errors: string[] }
 
 // Generate publish checklist
-generatePublishChecklist(pkg)
+generatePublishChecklist(pkg);
 // Returns: Array of checks with status
 
 // Format package info
-formatPackageInfo(info)
+formatPackageInfo(info);
 // Returns: Formatted string for display
 
 // Generate publish guide
-generatePublishGuide('package-name')
+generatePublishGuide('package-name');
 // Returns: Complete publishing guide text
 
 // Check npm authentication
-await checkNpmAuth()
+await checkNpmAuth();
 // Returns: { authenticated: boolean, username? }
 ```
 
@@ -300,6 +312,7 @@ npm run precheck
 ```
 
 Validates:
+
 - ✅ Package name format
 - ✅ Version format (semantic versioning)
 - ✅ All required fields present
@@ -313,6 +326,7 @@ Validates:
 ## 🔐 Security Best Practices
 
 ### Setup NPM Token for CI/CD
+
 ```bash
 # Generate at: https://www.npmjs.com/settings/~/tokens
 
@@ -324,6 +338,7 @@ echo "//registry.npmjs.org/:_authToken=your-token-here" > ~/.npmrc
 ```
 
 ### GitHub Actions Example
+
 ```yaml
 - uses: actions/setup-node@v3
   with:
@@ -347,18 +362,23 @@ echo "//registry.npmjs.org/:_authToken=your-token-here" > ~/.npmrc
 ## 🐛 Troubleshooting
 
 ### Package Name Taken
+
 **Solution:** Choose a unique name or use scoping:
+
 ```json
 { "name": "@yourname/teams-cli" }
 ```
 
 ### Not Authenticated
+
 **Solution:** Run `npm login` and verify with `npm whoami`
 
 ### Version Already Published
+
 **Solution:** Update version with `npm version patch`
 
 ### Build Fails
+
 **Solution:** Run `npm run build` manually to check errors
 
 ---
@@ -389,6 +409,7 @@ echo "//registry.npmjs.org/:_authToken=your-token-here" > ~/.npmrc
 ✅ Teams CLI is fully configured and ready for npm publishing!
 
 **Included Features:**
+
 - ✅ Team management
 - ✅ Member management (add/remove/list)
 - ✅ Complete invite system with expiration
@@ -401,6 +422,7 @@ echo "//registry.npmjs.org/:_authToken=your-token-here" > ~/.npmrc
 - ✅ Interactive CLI
 
 **Ready for Users:**
+
 - ✅ Global CLI installation
 - ✅ npm package distribution
 - ✅ Complete documentation
@@ -411,4 +433,3 @@ echo "//registry.npmjs.org/:_authToken=your-token-here" > ~/.npmrc
 ---
 
 **Good luck publishing Teams CLI to npm! 🚀**
-

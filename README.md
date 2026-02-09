@@ -13,6 +13,7 @@
 ## ✨ Features
 
 ### Core Capabilities
+
 - 🏢 **Team Management** - Create, view, update, and manage teams
 - 👥 **Member Management** - Add, remove, and list team members with role management
 - 📨 **Invite System** - Send secure invites with unique codes and auto-expiration
@@ -50,11 +51,13 @@ npx @prarthana25/teams-cli team list
 ## 🎯 Quick Start
 
 ### 1️⃣ Login with GitHub
+
 ```bash
 teams login
 ```
 
 ### 2️⃣ Create and Manage Teams
+
 ```bash
 # Create a new team
 teams team create "MyAwesomeTeam"
@@ -67,6 +70,7 @@ teams team get 1
 ```
 
 ### 3️⃣ Manage Team Members
+
 ```bash
 # Add a member to a team
 teams member add --team-id 1 --username octocat
@@ -79,6 +83,7 @@ teams member remove --team-id 1 --user-id 5
 ```
 
 ### 4️⃣ Invite System
+
 ```bash
 # Send an invite to a new user
 teams invite send --team-id 1 --username newuser
@@ -91,6 +96,7 @@ teams invite list --team-id 1
 ```
 
 ### 5️⃣ Repository Management
+
 ```bash
 # Add a GitHub repository to a team
 teams repo add --team-id 1 --url https://github.com/user/repo
@@ -100,6 +106,7 @@ teams repo list --team-id 1
 ```
 
 ### 6️⃣ View Analytics
+
 ```bash
 # Get team activity summary
 teams analytics summary --team-id 1
@@ -113,6 +120,7 @@ teams analytics details --team-id 1
 ## 📚 Complete Command Reference
 
 ### Authentication
+
 ```bash
 teams login              # Authenticate with GitHub
 teams logout             # Sign out and clear tokens
@@ -120,6 +128,7 @@ teams whoami             # Show current logged-in user
 ```
 
 ### Team Operations
+
 ```bash
 teams team list          # List all teams
 teams team create NAME   # Create a new team
@@ -128,6 +137,7 @@ teams team delete ID     # Delete a team
 ```
 
 ### Member Operations
+
 ```bash
 teams member list --team-id ID       # List team members
 teams member add --team-id ID --username USERNAME    # Add a member
@@ -135,6 +145,7 @@ teams member remove --team-id ID --user-id USER_ID   # Remove a member
 ```
 
 ### Repository Operations
+
 ```bash
 teams repo list --team-id ID            # List team repositories
 teams repo add --team-id ID --url URL   # Add a repository
@@ -142,6 +153,7 @@ teams repo remove --team-id ID --repo-id REPO_ID
 ```
 
 ### Invite Operations
+
 ```bash
 teams invite list --team-id ID          # List invites
 teams invite send --team-id ID --username USERNAME  # Send invite
@@ -149,12 +161,14 @@ teams invite accept --code CODE         # Accept invite
 ```
 
 ### Analytics
+
 ```bash
 teams analytics summary --team-id ID    # Team activity summary
 teams analytics commits --repo-id ID    # Commit statistics
 ```
 
 ### System
+
 ```bash
 teams help              # Show help information
 teams version           # Display version
@@ -247,12 +261,14 @@ Teams-CLI/
 ### 🔧 Installation Steps
 
 #### Step 1: Clone Repository
+
 ```bash
 git clone https://github.com/hitoriiiiiiii/Teams-Cli.git
 cd Teams-CLI
 ```
 
 #### Step 2: Install Dependencies
+
 ```bash
 npm install
 ```
@@ -279,6 +295,7 @@ NODE_ENV=development
 ```
 
 **How to Get GitHub OAuth Credentials:**
+
 1. Go to GitHub Settings → Developer settings → OAuth Apps
 2. Create a new OAuth application
 3. Set Authorization callback URL to `http://localhost:3000/auth/github/callback`
@@ -300,16 +317,19 @@ ts-node setup-test-user.ts
 #### Step 5: Start the Application
 
 **For CLI Development:**
+
 ```bash
 npm run dev
 ```
 
 **For REST API:**
+
 ```bash
 npm run api
 ```
 
 **For Production:**
+
 ```bash
 npm run build
 npm start
@@ -322,6 +342,7 @@ npm start
 ### Server Setup
 
 Start the API server:
+
 ```bash
 npm run api
 ```
@@ -331,11 +352,13 @@ The server will be available at `http://localhost:3000`
 ### API Endpoints Overview
 
 #### Health & Status
+
 ```
 GET  /health              → Check API health
 ```
 
 #### Teams
+
 ```
 GET    /api/teams                    → List all teams
 POST   /api/teams                    → Create new team
@@ -348,6 +371,7 @@ GET    /api/teams/:id/analytics      → Get team analytics
 ```
 
 #### Users
+
 ```
 GET    /api/users                    → List all users
 GET    /api/users/:id                → Get user details
@@ -355,6 +379,7 @@ GET    /api/users/:id/teams          → Get user's teams
 ```
 
 #### Repositories
+
 ```
 GET    /api/repos                    → List all repositories
 POST   /api/repos                    → Add repository
@@ -364,6 +389,7 @@ GET    /api/repos/:id/commits        → Get repository commits
 ```
 
 #### Commits
+
 ```
 GET    /api/commits                  → List all commits
 GET    /api/commits/:id              → Get commit details
@@ -371,6 +397,7 @@ GET    /api/repos/:id/commits        → List commits for a repository
 ```
 
 #### Invites
+
 ```
 GET    /api/invites                  → List all invites
 POST   /api/invites                  → Create invite
@@ -379,6 +406,7 @@ DELETE /api/invites/:id              → Cancel invite
 ```
 
 #### Analytics
+
 ```
 GET    /api/analytics/summary        → Overall statistics
 GET    /api/analytics/teams/:id      → Team analytics
@@ -397,6 +425,7 @@ curl -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
 ### Example API Requests
 
 **Create a Team:**
+
 ```bash
 curl -X POST http://localhost:3000/api/teams \
   -H "Authorization: Bearer YOUR_TOKEN" \
@@ -408,6 +437,7 @@ curl -X POST http://localhost:3000/api/teams \
 ```
 
 **Add Repository to Team:**
+
 ```bash
 curl -X POST http://localhost:3000/api/repos \
   -H "Authorization: Bearer YOUR_TOKEN" \
@@ -418,19 +448,18 @@ curl -X POST http://localhost:3000/api/repos \
   }'
 ```
 
-
 ## 🔒 Security & Rate Limiting
 
 ### Rate Limiting
 
 The API implements comprehensive rate limiting powered by Redis:
 
-| Endpoint Category | Limit | Window |
-|---|---|---|
-| **General Requests** | 100 | 1 minute |
-| **Authentication** | 10 | 15 minutes |
-| **Sensitive Operations** | 5 | 1 minute |
-| **Public Endpoints** | 200 | 1 hour |
+| Endpoint Category        | Limit | Window     |
+| ------------------------ | ----- | ---------- |
+| **General Requests**     | 100   | 1 minute   |
+| **Authentication**       | 10    | 15 minutes |
+| **Sensitive Operations** | 5     | 1 minute   |
+| **Public Endpoints**     | 200   | 1 hour     |
 
 See [API_RATE_LIMITING.md](./API_RATE_LIMITING.md) for advanced configuration.
 
@@ -440,33 +469,38 @@ See [API_RATE_LIMITING.md](./API_RATE_LIMITING.md) for advanced configuration.
 ✅ **CORS Protection** - Configured cross-origin access  
 ✅ **Input Validation** - Comprehensive parameter validation  
 ✅ **Token Encryption** - Secure token storage in database  
-✅ **Rate Limiting** - Prevent brute force and DDoS attacks  
+✅ **Rate Limiting** - Prevent brute force and DDoS attacks
 
 ---
 
 ## 🧪 Testing
 
 ### Run All Tests
+
 ```bash
 npm test
 ```
 
 ### Run Tests with Coverage
+
 ```bash
 npm test -- --coverage
 ```
 
 ### Run Specific Test File
+
 ```bash
 npm test -- teams.test.ts
 ```
 
 ### Watch Mode (for development)
+
 ```bash
 npm test -- --watch
 ```
 
 ### Test Coverage Report
+
 ```bash
 # Generate coverage report
 npm test -- --coverage
@@ -491,7 +525,7 @@ This will automatically:
 ✅ Pull required images  
 ✅ Create and start all containers  
 ✅ Run database healthchecks  
-✅ Configure networking between services  
+✅ Configure networking between services
 
 **Services Running:**
 | Service | Container Name | Port | Status |
@@ -579,6 +613,7 @@ API_PORT=3000
 ```
 
 To override, create a `.env.docker` file and run:
+
 ```bash
 docker-compose --env-file .env.docker up -d
 ```
@@ -601,6 +636,7 @@ redis-cli -p 6379
 ### 🔧 Troubleshooting Docker
 
 **Container won't start:**
+
 ```bash
 # Check logs
 docker-compose logs app
@@ -610,6 +646,7 @@ docker-compose ps
 ```
 
 **Port already in use:**
+
 ```bash
 # Stop existing containers
 docker-compose down
@@ -619,18 +656,21 @@ docker-compose -f docker-compose.yml up -d -p 3001:3000
 ```
 
 **Database not migrating:**
+
 ```bash
 # Manually run migrations in container
 docker-compose exec app npx prisma migrate deploy
 ```
 
 **Redis connection issues:**
+
 ```bash
 # Test Redis connection
 docker-compose exec redis redis-cli ping
 ```
 
 **Force rebuild (clear cache):**
+
 ```bash
 docker-compose build --no-cache
 docker-compose up -d
@@ -642,17 +682,16 @@ docker-compose up -d
 
 ### Environment Variables
 
-| Variable | Description | Required | Default |
-|---|---|---|---|
-| `DATABASE_URL` | PostgreSQL connection string | ✅ Yes | — |
-| `REDIS_URL` | Redis connection URL | ✅ Yes | — |
-| `GITHUB_CLIENT_ID` | OAuth client ID | ✅ Yes | — |
-| `GITHUB_CLIENT_SECRET` | OAuth client secret | ✅ Yes | — |
-| `GITHUB_TOKEN` | GitHub personal access token | ✅ Yes | — |
-| `NODE_ENV` | Runtime environment | ❌ No | `development` |
-| `PORT` | API server port | ❌ No | `3000` |
-| `LOG_LEVEL` | Logging level | ❌ No | `info` |
-
+| Variable               | Description                  | Required | Default       |
+| ---------------------- | ---------------------------- | -------- | ------------- |
+| `DATABASE_URL`         | PostgreSQL connection string | ✅ Yes   | —             |
+| `REDIS_URL`            | Redis connection URL         | ✅ Yes   | —             |
+| `GITHUB_CLIENT_ID`     | OAuth client ID              | ✅ Yes   | —             |
+| `GITHUB_CLIENT_SECRET` | OAuth client secret          | ✅ Yes   | —             |
+| `GITHUB_TOKEN`         | GitHub personal access token | ✅ Yes   | —             |
+| `NODE_ENV`             | Runtime environment          | ❌ No    | `development` |
+| `PORT`                 | API server port              | ❌ No    | `3000`        |
+| `LOG_LEVEL`            | Logging level                | ❌ No    | `info`        |
 
 ## 📖 Development Guide
 
@@ -720,10 +759,13 @@ npx prisma generate
 ## 🔧 Troubleshooting
 
 ### Redis Connection Issues
+
 ```
 Error: ECONNREFUSED 127.0.0.1:6379
 ```
+
 **Solution:**
+
 ```bash
 # Start Redis locally
 redis-server
@@ -735,6 +777,7 @@ docker run -d -p 6379:6379 redis:latest
 See [REDIS_QUICKSTART.md](./REDIS_QUICKSTART.md) for more details.
 
 ### Database Migration Errors
+
 ```bash
 # Check migration status
 npx prisma migrate status
@@ -747,10 +790,13 @@ npx prisma migrate resolve --rolled-back migration_name
 ```
 
 ### PostgreSQL Connection Issues
+
 ```
 Error: connect ECONNREFUSED 127.0.0.1:5432
 ```
+
 **Solution:**
+
 ```bash
 # Using Docker Compose (includes PostgreSQL)
 docker-compose up -d postgres
@@ -762,11 +808,13 @@ docker-compose up -d postgres
 ```
 
 ### GitHub OAuth Errors
+
 1. Verify `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` in `.env`
 2. Check callback URL is set to `http://localhost:3000/auth/github/callback` in GitHub settings
 3. Ensure GitHub OAuth app has proper permissions
 
 ### Test Failures
+
 ```bash
 # Clear Jest cache
 npm test -- --clearCache
@@ -779,6 +827,7 @@ npm test teams.test.ts
 ```
 
 ### Port Already in Use
+
 ```bash
 # Change port in .env
 PORT=3001
@@ -801,6 +850,7 @@ PORT=3001
 ## 🚀 Performance Tips
 
 ### Optimization Strategies
+
 - **Enable Caching**: Use Redis to cache frequently accessed data
 - **Batch Operations**: Combine multiple API calls into single requests
 - **Connection Pooling**: Configure PostgreSQL connection pooling
@@ -808,6 +858,7 @@ PORT=3001
 - **Database Indexing**: Add indexes on frequently queried fields
 
 ### Monitoring
+
 ```bash
 # Monitor API performance
 npm run api
@@ -820,11 +871,13 @@ npx prisma studio
 ```
 
 ---
+
 ## 🤝 Contributing
 
 We welcome contributions! Here's how to help:
 
 ### Steps
+
 1. **Fork** the repository
 2. **Create** a feature branch (`git checkout -b feature/AmazingFeature`)
 3. **Commit** your changes (`git commit -m 'Add AmazingFeature'`)
@@ -832,6 +885,7 @@ We welcome contributions! Here's how to help:
 5. **Open** a Pull Request
 
 ### Guidelines
+
 - Follow TypeScript best practices
 - Write tests for new features
 - Update documentation
@@ -845,6 +899,7 @@ We welcome contributions! Here's how to help:
 This project is licensed under the **MIT License** - see the [LICENSE](./LICENSE) file for details.
 
 **MIT License** allows you to:
+
 - ✅ Use commercially
 - ✅ Modify the code
 - ✅ Distribute
@@ -855,11 +910,13 @@ This project is licensed under the **MIT License** - see the [LICENSE](./LICENSE
 ## 🙏 Support & Contact
 
 ### Get Help
+
 - **GitHub Issues**: [Report bugs or request features](https://github.com/hitoriiiiiiii/Teams-Cli/issues)
 - **GitHub Discussions**: [Ask questions and share ideas](https://github.com/hitoriiiiiiii/Teams-Cli/discussions)
 - **Email**: prarthanagade25@gmail.com
 
 ### Stay Connected
+
 - ⭐ **Star the repo** if you find it useful!
 - 🐛 **Report bugs** to help us improve
 - 💡 **Share ideas** for new features
@@ -874,4 +931,5 @@ This project is licensed under the **MIT License** - see the [LICENSE](./LICENSE
 A developer passionate about open-source and building developer tools.
 
 ---
+
 **Made with ❤️ by the Teams CLI Community**

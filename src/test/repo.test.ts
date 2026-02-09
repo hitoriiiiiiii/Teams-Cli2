@@ -12,12 +12,15 @@ describe('Repo model (Drizzle)', () => {
     const t = await db.insert(teams).values({ name: 'RepoTeam' }).returning();
     const teamId = t[0].id;
 
-    const created = await db.insert(repos).values({
-      githubId: 'r_1',
-      name: 'repo1',
-      fullName: 'owner/repo1',
-      teamId,
-    }).returning();
+    const created = await db
+      .insert(repos)
+      .values({
+        githubId: 'r_1',
+        name: 'repo1',
+        fullName: 'owner/repo1',
+        teamId,
+      })
+      .returning();
 
     expect(created.length).toBe(1);
 
@@ -26,7 +29,10 @@ describe('Repo model (Drizzle)', () => {
     expect(found.length).toBeGreaterThanOrEqual(1);
 
     // delete by fullName using eq helper
-    const deleted = await db.delete(repos).where(eq(repos.fullName, 'owner/repo1')).returning();
+    const deleted = await db
+      .delete(repos)
+      .where(eq(repos.fullName, 'owner/repo1'))
+      .returning();
     expect(deleted.length).toBe(1);
   });
 });

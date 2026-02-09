@@ -4,9 +4,9 @@ import chalk from 'chalk';
 import open from 'open';
 import {
   writeConfig,
-  getAuthToken,
   clearAuthToken,
 } from '../config/auth.config';
+import { createUser, getUserByGithubId } from '../db/repositories';
 
 const CLIENT_ID = process.env.GITHUB_CLIENT_ID!;
 
@@ -50,15 +50,48 @@ export async function loginWithGithub() {
       );
 
       if (tokenRes.data.access_token) {
-        // ✅ Save token in unified config
-        writeConfig({ token: tokenRes.data.access_token });
-        wait.succeed('Logged in successfully 🎉');
+        const token = tokenRes.data.access_token;
+
+        // Fetch user info from GitHub API
+        const userRes = await axios.get('https://api.github.com/user', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/vnd.github+json',
+          },
+        });
+
+        const githubUser = userRes.data;
+
+        // Create or update user in database
+        let user = await getUserByGithubId(githubUser.id.toString());
+        if (!user) {
+          user = await createUser(
+            githubUser.id.toString(),
+            githubUser.login,
+            githubUser.email,
+          );
+        }
+
+        // Save token and user info to config
+        writeConfig({
+          token,
+          user: {
+            id: user.id,
+            githubId: user.githubId,
+            username: user.username,
+            email: user.email,
+          },
+        });
+
+        wait.succeed(chalk.green.bold('✅ Logged in successfully!'));
+        console.log(chalk.cyan(`\nWelcome, ${user.username}! 🎉`));
         break;
       }
     }
   } catch (err: any) {
     spinner.fail('GitHub login failed');
     console.error(err.message);
+    throw err;
   }
 }
 
@@ -67,4 +100,3 @@ export function logoutUser() {
   clearAuthToken();
   console.log(chalk.red('Logged out successfully'));
 }
-

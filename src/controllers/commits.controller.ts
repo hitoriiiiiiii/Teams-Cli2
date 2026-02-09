@@ -1,8 +1,8 @@
-import axios from "axios";
-import { eq } from "drizzle-orm";
+import axios from 'axios';
+import { eq } from 'drizzle-orm';
 
-import { db as defaultDb } from "../db/index";
-import { repos, commits as commitsTable } from "../db/schema";
+import { db as defaultDb } from '../db/index';
+import { repos, commits as commitsTable } from '../db/schema';
 
 export interface GitHubCommit {
   sha: string;
@@ -15,11 +15,11 @@ export interface GitHubCommit {
 export async function getCommits(
   owner: string,
   repo: string,
-  author?: string
+  author?: string,
 ): Promise<GitHubCommit[]> {
   try {
     const url = `https://api.github.com/repos/${owner}/${repo}/commits${
-      author ? `?author=${author}` : ""
+      author ? `?author=${author}` : ''
     }`;
 
     const response = await axios.get(url);
@@ -32,7 +32,7 @@ export async function getCommits(
       files: c.files?.map((f: any) => f.filename) || [],
     }));
   } catch (err: any) {
-    console.error("Failed to fetch commits:", err.message);
+    console.error('Failed to fetch commits:', err.message);
     return [];
   }
 }
@@ -41,7 +41,7 @@ export async function getCommit(
   owner: string,
   repo: string,
   sha: string,
-  db = defaultDb
+  db = defaultDb,
 ) {
   try {
     const commitResult = await db
@@ -53,7 +53,7 @@ export async function getCommit(
     const commit = commitResult[0];
 
     if (commit) {
-      return { ...commit, source: "db" };
+      return { ...commit, source: 'db' };
     }
 
     const githubCommits = await getCommits(owner, repo);
@@ -78,15 +78,15 @@ export async function getCommit(
           createdAt: new Date(ghCommit.date).toISOString(),
         });
       } catch (dbErr: any) {
-        if (!dbErr.message?.includes("UNIQUE constraint failed")) {
-          console.warn("Could not save commit:", dbErr.message);
+        if (!dbErr.message?.includes('UNIQUE constraint failed')) {
+          console.warn('Could not save commit:', dbErr.message);
         }
       }
     }
 
-    return { ...ghCommit, source: "github" };
+    return { ...ghCommit, source: 'github' };
   } catch (err: any) {
-    console.error("Failed to fetch commit:", err.message);
+    console.error('Failed to fetch commit:', err.message);
     return null;
   }
 }

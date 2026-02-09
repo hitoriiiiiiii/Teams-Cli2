@@ -2,8 +2,7 @@ import { Command } from 'commander';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import { showHelp } from './help';
-import { logoutUser } from '../cli/auth';
-import { createUser, getUserByGithubId } from '../db/repositories';
+import { logoutUser, loginWithGithub } from '../cli/auth';
 import {
   createRepo,
   getReposByTeam,
@@ -16,18 +15,17 @@ import {
   addUsertoTeam,
   removeUserFromTeam,
   getTeamById,
-  getTeamByName,
-  listTeams,
 } from '../controllers/team.controller';
 import {
   sendInvite,
   acceptInvite,
   getTeamInvites,
-  getInviteByCode,
   rejectInvite,
 } from '../controllers/invite.controller';
-import { computeMemberActivity, getTeamLeaderboard } from '../services/analytics.services';
-import { getGithubUserMetadata } from '../services/github.services';
+import {
+  computeMemberActivity,
+  getTeamLeaderboard,
+} from '../services/analytics.services';
 import { db } from '../db/index';
 import { users, teamMembers, repos, commits, teams } from '../db/schema';
 import { eq, count, desc, and } from 'drizzle-orm';
@@ -38,7 +36,7 @@ import { ensureUserInTeam, requireLogin } from './team';
 import { getUserByUsername } from '../controllers/user.controller';
 import { getCommits, getCommit } from '../controllers/commits.controller';
 import { logger } from '../utils/logger';
-import { startSpinner, successSpinner } from '../utils/spinner';
+import { startSpinner } from '../utils/spinner';
 import {
   askTeamName,
   askGithubUsername,
@@ -66,24 +64,13 @@ program
 
 program
   .command('login')
-  .description('Login to Teams CLI')
-  .option('-g, --githubId <githubId>', 'GitHub ID')
-  .option('-u, --username <username>', 'Username')
-  .action(async (opts) => {
-    const githubId = opts.githubId;
-    const username = opts.username;
-
-    if (!githubId || !username) {
-      console.error('githubId and username are required');
-      return;
+  .description('Login to Teams CLI with GitHub OAuth')
+  .action(async () => {
+    try {
+      await loginWithGithub();
+    } catch (error: any) {
+      console.error(chalk.red('❌ Login failed: ' + error.message));
     }
-
-    let user = await getUserByGithubId(githubId);
-    if (!user) {
-      user = await createUser(githubId, username);
-    }
-
-    console.log('Logged in successfully');
   });
 
 program
@@ -137,18 +124,25 @@ user
       }
     }
 
-    const spinner = startSpinner(chalk.cyan('Fetching user details...'), 'cyan');
+    const spinner = startSpinner(
+      chalk.cyan('Fetching user details...'),
+      'cyan',
+    );
     try {
       let user;
       if (userId) {
-        const userResult = await db.select({
-          id: users.id,
-          githubId: users.githubId,
-          username: users.username,
-          email: users.email,
-          activityStatus: users.activityStatus,
-          createdAt: users.createdAt,
-        }).from(users).where(eq(users.id, Number(userId))).limit(1);
+        const userResult = await db
+          .select({
+            id: users.id,
+            githubId: users.githubId,
+            username: users.username,
+            email: users.email,
+            activityStatus: users.activityStatus,
+            createdAt: users.createdAt,
+          })
+          .from(users)
+          .where(eq(users.id, Number(userId)))
+          .limit(1);
         user = userResult[0];
       } else {
         user = await getUserByUsername(username as string);
@@ -162,11 +156,23 @@ user
       spinner.succeed(chalk.green.bold('✓ User found'));
       logger.header(`User Details: ${user.username}`);
       console.log(chalk.yellow('ID       :') + chalk.cyan.bold(` ${user.id}`));
-      console.log(chalk.yellow('Email    :') + chalk.cyan.bold(` ${user.email}`));
-      console.log(chalk.yellow('GitHub   :') + chalk.cyan.bold(` ${user.githubId || 'N/A'}`));
-      console.log(chalk.yellow('Username :') + chalk.cyan.bold(` ${user.username}`));
+      console.log(
+        chalk.yellow('Email    :') + chalk.cyan.bold(` ${user.email}`),
+      );
+      console.log(
+        chalk.yellow('GitHub   :') +
+          chalk.cyan.bold(` ${user.githubId || 'N/A'}`),
+      );
+      console.log(
+        chalk.yellow('Username :') + chalk.cyan.bold(` ${user.username}`),
+      );
       if ((user as any).teams && (user as any).teams.length > 0) {
-        console.log(chalk.yellow('Teams    :') + chalk.cyan.bold(` ${(user as any).teams.map((t: any) => t.team.name).join(', ')}`));
+        console.log(
+          chalk.yellow('Teams    :') +
+            chalk.cyan.bold(
+              ` ${(user as any).teams.map((t: any) => t.team.name).join(', ')}`,
+            ),
+        );
       }
     } catch (error) {
       spinner.fail(chalk.red.bold('Failed to fetch user details'));
@@ -247,7 +253,10 @@ team
       teamId = id;
     }
 
-    const spinner = startSpinner(chalk.cyan(`Fetching team ${teamId}...`), 'cyan');
+    const spinner = startSpinner(
+      chalk.cyan(`Fetching team ${teamId}...`),
+      'cyan',
+    );
     try {
       const team = await getTeamById(Number(teamId));
       if (!team) {
@@ -271,15 +280,26 @@ team
       spinner.succeed(chalk.green.bold('✓ Team details fetched'));
       logger.header(`Team: ${team.name}`);
       console.log(chalk.yellow('ID        :') + chalk.cyan.bold(` ${team.id}`));
-      console.log(chalk.yellow('Name      :') + chalk.cyan.bold(` ${team.name}`));
-      console.log(chalk.yellow('Members   :') + chalk.cyan.bold(` ${memberCount}`));
-      console.log(chalk.yellow('Repos     :') + chalk.cyan.bold(` ${repoCount}`));
-      console.log(chalk.yellow('Created   :') + chalk.cyan.bold(` ${team.createdAt}`));
+      console.log(
+        chalk.yellow('Name      :') + chalk.cyan.bold(` ${team.name}`),
+      );
+      console.log(
+        chalk.yellow('Members   :') + chalk.cyan.bold(` ${memberCount}`),
+      );
+      console.log(
+        chalk.yellow('Repos     :') + chalk.cyan.bold(` ${repoCount}`),
+      );
+      console.log(
+        chalk.yellow('Created   :') + chalk.cyan.bold(` ${team.createdAt}`),
+      );
     } catch (error: any) {
       spinner.fail(chalk.red.bold('Failed to fetch team details'));
-      
+
       // Check for database connection errors
-      if (error.message?.includes('Can\'t reach database server') || error.code === 'ECONNREFUSED') {
+      if (
+        error.message?.includes("Can't reach database server") ||
+        error.code === 'ECONNREFUSED'
+      ) {
         console.error(chalk.red('\n⚠ Database Connection Error:'));
         console.error(chalk.yellow('  The database server is unreachable.'));
         console.error(chalk.yellow('  Please check:'));
@@ -498,7 +518,9 @@ member
         return;
       }
 
-      spinner.succeed(chalk.green.bold(`Found ${team.members.length} member(s)`));
+      spinner.succeed(
+        chalk.green.bold(`Found ${team.members.length} member(s)`),
+      );
       logger.title(`👥 Team "${team.name}" Members`);
       team.members.forEach((member: any, index: number) => {
         console.log(
@@ -631,7 +653,11 @@ repo
       return;
     }
 
-    const teamResult = await db.select().from(teams).where(eq(teams.name, finalTeamName)).limit(1);
+    const teamResult = await db
+      .select()
+      .from(teams)
+      .where(eq(teams.name, finalTeamName))
+      .limit(1);
     const team = teamResult[0];
     if (!team) {
       logger.error('Team not found');
@@ -691,7 +717,9 @@ invite
 
       spinner.succeed(chalk.green.bold('✓ Invite sent successfully'));
       logger.title('Invite Details');
-      console.log(chalk.yellow('Code   :') + chalk.cyan.bold(` ${invite.code}`));
+      console.log(
+        chalk.yellow('Code   :') + chalk.cyan.bold(` ${invite.code}`),
+      );
       console.log(chalk.yellow('To     :') + chalk.cyan.bold(` ${username}`));
       console.log(chalk.yellow('Team   :') + chalk.cyan.bold(` ${team.name}`));
       console.log(chalk.dim('Expires: 7 days from now'));
@@ -724,7 +752,9 @@ invite
 
       spinner.succeed(chalk.green.bold('✓ Invite accepted'));
       logger.title('Team Joined');
-      console.log(chalk.yellow('Team:') + chalk.cyan.bold(` ${invite.team?.name}`));
+      console.log(
+        chalk.yellow('Team:') + chalk.cyan.bold(` ${invite.team?.name}`),
+      );
     } catch (error: any) {
       spinner.fail(chalk.red.bold('Failed to accept invite'));
       logger.error(error.message);
@@ -743,10 +773,7 @@ invite
       code = inputCode;
     }
 
-    const spinner = startSpinner(
-      chalk.cyan(`Rejecting invite...`),
-      'cyan',
-    );
+    const spinner = startSpinner(chalk.cyan(`Rejecting invite...`), 'cyan');
 
     try {
       await rejectInvite(code);
@@ -769,10 +796,7 @@ invite
       teamId = id;
     }
 
-    const spinner = startSpinner(
-      chalk.cyan(`Fetching invites...`),
-      'cyan',
-    );
+    const spinner = startSpinner(chalk.cyan(`Fetching invites...`), 'cyan');
 
     try {
       const teamIdNum = Number(teamId);
@@ -797,7 +821,11 @@ invite
             chalk.dim(` → ${inv.invitedUser || 'Pending'}`),
         );
         console.log(chalk.dim(`   Sent by: ${inv.inviter.username}`));
-        console.log(chalk.dim(`   Expires: ${new Date(inv.expiresAt).toLocaleDateString()}`));
+        console.log(
+          chalk.dim(
+            `   Expires: ${new Date(inv.expiresAt).toLocaleDateString()}`,
+          ),
+        );
       });
     } catch (error: any) {
       spinner.fail(chalk.red.bold('Failed to fetch invites'));
@@ -872,7 +900,9 @@ commitsCmd
       );
       console.log(
         chalk.yellow('Date    :') +
-          chalk.cyan.bold(` ${(commit as any).date || (commit as any).createdAt}`),
+          chalk.cyan.bold(
+            ` ${(commit as any).date || (commit as any).createdAt}`,
+          ),
       );
       console.log(
         chalk.yellow('Files   :') +
@@ -1032,12 +1062,19 @@ analytics
       const isMemberResult = await db
         .select()
         .from(teamMembers)
-        .where(and(eq(teamMembers.userId, user.id), eq(teamMembers.teamId, Number(teamId))));
+        .where(
+          and(
+            eq(teamMembers.userId, user.id),
+            eq(teamMembers.teamId, Number(teamId)),
+          ),
+        );
 
       const isMember = isMemberResult[0];
 
       if (!isMember) {
-        spinner.warn(chalk.yellow.bold(`${username} is not a member of this team`));
+        spinner.warn(
+          chalk.yellow.bold(`${username} is not a member of this team`),
+        );
         return;
       }
 
@@ -1045,7 +1082,12 @@ analytics
         .select({ count: count() })
         .from(commits)
         .leftJoin(repos, eq(commits.repoId, repos.id))
-        .where(and(eq(commits.author, user.githubId), eq(repos.teamId, Number(teamId))));
+        .where(
+          and(
+            eq(commits.author, user.githubId),
+            eq(repos.teamId, Number(teamId)),
+          ),
+        );
 
       const commitCount = commitsResult[0].count;
 
@@ -1053,7 +1095,12 @@ analytics
         .select()
         .from(commits)
         .leftJoin(repos, eq(commits.repoId, repos.id))
-        .where(and(eq(commits.author, user.githubId), eq(repos.teamId, Number(teamId))))
+        .where(
+          and(
+            eq(commits.author, user.githubId),
+            eq(repos.teamId, Number(teamId)),
+          ),
+        )
         .orderBy(desc(commits.createdAt))
         .limit(1);
 
@@ -1064,7 +1111,8 @@ analytics
 
       console.log(chalk.yellow('Total Commits: ') + commitCount);
       console.log(
-        chalk.yellow('Last Active  : ') + (lastCommit?.commits.createdAt || 'Never'),
+        chalk.yellow('Last Active  : ') +
+          (lastCommit?.commits.createdAt || 'Never'),
       );
     } catch (err) {
       spinner.fail(chalk.red.bold('Failed to fetch member analytics'));
@@ -1090,10 +1138,17 @@ analytics
     );
 
     try {
-      const membersResult = await db.select({ count: count() }).from(teamMembers).where(eq(teamMembers.teamId, Number(teamId)));
+      const membersResult = await db
+        .select({ count: count() })
+        .from(teamMembers)
+        .where(eq(teamMembers.teamId, Number(teamId)));
       const members = membersResult[0].count;
 
-      const commitsResult = await db.select({ count: count() }).from(commits).leftJoin(repos, eq(commits.repoId, repos.id)).where(eq(repos.teamId, Number(teamId)));
+      const commitsResult = await db
+        .select({ count: count() })
+        .from(commits)
+        .leftJoin(repos, eq(commits.repoId, repos.id))
+        .where(eq(repos.teamId, Number(teamId)));
 
       const commitsCount = commitsResult[0].count;
 

@@ -54,7 +54,7 @@ module.exports = [
         'warn',
         { argsIgnorePattern: '^_' },
       ],
-      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/ban-ts-comment': 'warn',
       'no-console': ['warn', { allow: ['log', 'warn', 'error'] }],
     },

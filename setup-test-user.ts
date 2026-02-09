@@ -7,7 +7,11 @@ import { writeConfig } from './src/config/auth.config';
 async function setupTestUser() {
   try {
     // Get or create test user
-    const existing = await db.select().from(users).where(eq(users.username, 'testuser')).limit(1);
+    const existing = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, 'testuser'))
+      .limit(1);
     let user = existing[0];
 
     if (!user) {

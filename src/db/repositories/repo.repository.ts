@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from '../index';
 import { repos } from '../schema';
 
@@ -46,7 +46,9 @@ export async function getRepoById(repoId: number): Promise<Repo | null> {
 /**
  * Get repository by full name
  */
-export async function getRepoByFullName(fullName: string): Promise<Repo | null> {
+export async function getRepoByFullName(
+  fullName: string,
+): Promise<Repo | null> {
   const result = await db
     .select()
     .from(repos)
@@ -67,7 +69,7 @@ export async function getReposByTeam(teamId: number): Promise<Repo[]> {
  */
 export async function updateRepo(
   repoId: number,
-  updates: Partial<Omit<Repo, 'id' | 'createdAt'>>
+  updates: Partial<Omit<Repo, 'id' | 'createdAt'>>,
 ): Promise<Repo | null> {
   const result = await db
     .update(repos)
@@ -81,17 +83,16 @@ export async function updateRepo(
  * Delete repository by ID
  */
 export async function deleteRepoById(repoId: number): Promise<Repo | null> {
-  const result = await db
-    .delete(repos)
-    .where(eq(repos.id, repoId))
-    .returning();
+  const result = await db.delete(repos).where(eq(repos.id, repoId)).returning();
   return result[0] || null;
 }
 
 /**
  * Delete repository by full name
  */
-export async function deleteRepoByFullName(fullName: string): Promise<Repo | null> {
+export async function deleteRepoByFullName(
+  fullName: string,
+): Promise<Repo | null> {
   const result = await db
     .delete(repos)
     .where(eq(repos.fullName, fullName))
@@ -117,9 +118,12 @@ export async function repoExists(githubId: string): Promise<boolean> {
 export async function getReposByTeamPaginated(
   teamId: number,
   limit: number = 10,
-  offset: number = 0
+  offset: number = 0,
 ): Promise<{ repos: Repo[]; total: number }> {
-  const allRepos = await db.select().from(repos).where(eq(repos.teamId, teamId));
+  const allRepos = await db
+    .select()
+    .from(repos)
+    .where(eq(repos.teamId, teamId));
   const paginatedRepos = allRepos.slice(offset, offset + limit);
   return {
     repos: paginatedRepos,

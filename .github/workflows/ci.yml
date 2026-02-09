@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   test:
@@ -44,30 +44,30 @@ jobs:
       - name: Test CLI commands
         run: |
           echo "Testing Teams CLI commands..."
-          
+
           # Test help and version
           echo "✓ Testing --help"
           node dist/index.js --help
-          
+
           echo "✓ Testing --version"
           node dist/index.js --version
-          
+
           # Test login (with mock credentials in test environment)
           echo "✓ Testing login command"
           node dist/index.js login --githubId test_gh_001 --username testuser || true
-          
+
           # Test user commands
           echo "✓ Testing user commands"
           node dist/index.js user get --username testuser || true
-          
+
           # Test team commands (will fail without active team, but tests parsing)
           echo "✓ Testing team commands exist"
           node dist/index.js team --help
-          
+
           # Test repo commands (will fail without active team, but tests parsing)
           echo "✓ Testing repo commands exist"
           node dist/index.js repo --help
-          
+
           # Test invite commands (will fail without active invite, but tests parsing)
           echo "✓ Testing invite commands exist"
           node dist/index.js invite --help
@@ -95,14 +95,14 @@ jobs:
       - name: Test Docker image
         run: |
           echo "Testing Docker image..."
-          
+
           # Verify image exists
           docker images teams-cli:test
-          
+
           # Test that the Docker container can start and show help
           docker run --rm teams-cli:test node dist/index.js --help
           docker run --rm teams-cli:test node dist/index.js --version
-          
+
           # Test all main commands
           echo "Testing command availability in container..."
           docker run --rm teams-cli:test node dist/index.js login --help || true
@@ -110,7 +110,7 @@ jobs:
           docker run --rm teams-cli:test node dist/index.js team --help || true
           docker run --rm teams-cli:test node dist/index.js repo --help || true
           docker run --rm teams-cli:test node dist/index.js invite --help || true
-          
+
           echo "✅ All Docker image tests passed"
 
   publish-dry-run:

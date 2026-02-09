@@ -25,7 +25,6 @@ const GITHUB_API = 'https://api.github.com';
 export async function connectRepo({
   owner,
   repo,
-  isPrivate,
 }: {
   owner: string;
   repo: string;
@@ -151,25 +150,29 @@ export async function getGithubUserMetadata(username: string) {
   }
 }
 
-export async function getOrCreateUser(
-username: string
-): Promise<User> {
-const userResult = await db.select().from(users).where(eq(users.username, username)).limit(1);
-let user = userResult[0];
+export async function getOrCreateUser(username: string): Promise<User> {
+  const userResult = await db
+    .select()
+    .from(users)
+    .where(eq(users.username, username))
+    .limit(1);
+  let user = userResult[0];
 
-if (!user) {
-  const insertResult = await db.insert(users).values({
-    username,
-    githubId: username,
-    email: `${username}@github.local`,
-  }).returning();
-  user = insertResult[0];
-}
+  if (!user) {
+    const insertResult = await db
+      .insert(users)
+      .values({
+        username,
+        githubId: username,
+        email: `${username}@github.local`,
+      })
+      .returning();
+    user = insertResult[0];
+  }
 
-
-return {
-  ...user,
-  email: user.email || undefined,
-  activityStatus: user.activityStatus || 'ACTIVE',
-};
+  return {
+    ...user,
+    email: user.email || undefined,
+    activityStatus: user.activityStatus || 'ACTIVE',
+  };
 }

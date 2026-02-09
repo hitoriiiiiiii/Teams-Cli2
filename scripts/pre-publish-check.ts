@@ -26,13 +26,15 @@ function addCheck(
   name: string,
   passed: boolean,
   message: string,
-  severity: 'error' | 'warning' | 'info' = 'info'
+  severity: 'error' | 'warning' | 'info' = 'info',
 ) {
   checks.push({ name, passed, message, severity });
 }
 
 function printResults() {
-  console.log('\n' + chalk.bold.cyan('═══════════════════════════════════════'));
+  console.log(
+    '\n' + chalk.bold.cyan('═══════════════════════════════════════'),
+  );
   console.log(chalk.bold.cyan('   NPM Pre-Publish Checklist'));
   console.log(chalk.bold.cyan('═══════════════════════════════════════\n'));
 
@@ -65,13 +67,17 @@ function printResults() {
     console.log(`   ${chalk.green('✓')} ${check.name}`);
   });
 
-  console.log('\n' + chalk.bold.cyan('═══════════════════════════════════════\n'));
+  console.log(
+    '\n' + chalk.bold.cyan('═══════════════════════════════════════\n'),
+  );
 
   if (errors.length > 0) {
     console.log(chalk.red.bold('❌ FAILED: Cannot publish with errors\n'));
     process.exit(1);
   } else if (warnings.length > 0) {
-    console.log(chalk.yellow.bold('⚠️  WARNING: Review warnings before publishing\n'));
+    console.log(
+      chalk.yellow.bold('⚠️  WARNING: Review warnings before publishing\n'),
+    );
   } else {
     console.log(chalk.green.bold('✅ Ready to publish!\n'));
     console.log(chalk.cyan('Next steps:'));
@@ -92,10 +98,25 @@ async function runChecks() {
   const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
 
   // Required fields
-  addCheck('Package name', !!pkg.name, 'name: ' + (pkg.name || 'missing'), 'error');
-  addCheck('Package version', !!pkg.version, 'version: ' + (pkg.version || 'missing'), 'error');
+  addCheck(
+    'Package name',
+    !!pkg.name,
+    'name: ' + (pkg.name || 'missing'),
+    'error',
+  );
+  addCheck(
+    'Package version',
+    !!pkg.version,
+    'version: ' + (pkg.version || 'missing'),
+    'error',
+  );
   addCheck('Description', !!pkg.description, 'description present', 'warning');
-  addCheck('License', !!pkg.license, 'license: ' + (pkg.license || 'not specified'), 'warning');
+  addCheck(
+    'License',
+    !!pkg.license,
+    'license: ' + (pkg.license || 'not specified'),
+    'warning',
+  );
   addCheck('Author', !!pkg.author, 'author specified', 'warning');
 
   // Repo and homepage
@@ -103,13 +124,13 @@ async function runChecks() {
     'Repository URL',
     !!pkg.repository?.url,
     'repository: ' + (pkg.repository?.url || 'not specified'),
-    'warning'
+    'warning',
   );
   addCheck(
     'Homepage URL',
     !!pkg.homepage,
     'homepage: ' + (pkg.homepage || 'not specified'),
-    'warning'
+    'warning',
   );
 
   // Keywords
@@ -117,7 +138,7 @@ async function runChecks() {
     'Keywords present',
     Array.isArray(pkg.keywords) && pkg.keywords.length > 0,
     `${pkg.keywords?.length || 0} keywords`,
-    'warning'
+    'warning',
   );
 
   // Entry points
@@ -125,7 +146,7 @@ async function runChecks() {
     'Main entry point',
     !!pkg.main,
     'main: ' + (pkg.main || 'not specified'),
-    'error'
+    'error',
   );
 
   if (pkg.bin) {
@@ -138,7 +159,7 @@ async function runChecks() {
     'Version format',
     versionRegex.test(pkg.version),
     'follows semantic versioning',
-    'error'
+    'error',
   );
 
   // Package name format
@@ -147,20 +168,35 @@ async function runChecks() {
     'Package name format',
     nameRegex.test(pkg.name),
     'lowercase with hyphens only',
-    'error'
+    'error',
   );
 
   // Files check
   const distExists = fs.existsSync(path.join(__dirname, 'dist'));
-  addCheck('dist/ directory exists', distExists, 'compiled code present', 'error');
+  addCheck(
+    'dist/ directory exists',
+    distExists,
+    'compiled code present',
+    'error',
+  );
 
   // README check
   const readmeExists = fs.existsSync(path.join(__dirname, 'README.md'));
-  addCheck('README.md exists', readmeExists, 'documentation present', 'warning');
+  addCheck(
+    'README.md exists',
+    readmeExists,
+    'documentation present',
+    'warning',
+  );
 
   // LICENSE check
   const licenseExists = fs.existsSync(path.join(__dirname, 'LICENSE'));
-  addCheck('LICENSE file exists', licenseExists, 'license file present', 'warning');
+  addCheck(
+    'LICENSE file exists',
+    licenseExists,
+    'license file present',
+    'warning',
+  );
 
   // .npmignore check
   const npmignoreExists = fs.existsSync(path.join(__dirname, '.npmignore'));
@@ -168,14 +204,19 @@ async function runChecks() {
 
   // package-lock.json check
   const lockExists = fs.existsSync(path.join(__dirname, 'package-lock.json'));
-  addCheck('package-lock.json exists', lockExists, 'dependencies locked', 'info');
+  addCheck(
+    'package-lock.json exists',
+    lockExists,
+    'dependencies locked',
+    'info',
+  );
 
   // Scripts check
   addCheck(
     'Build script configured',
     !!pkg.scripts?.build,
     'npm run build available',
-    'info'
+    'info',
   );
 
   if (pkg.scripts?.test) {
@@ -189,7 +230,7 @@ async function runChecks() {
     'Dependencies',
     depCount > 0,
     `${depCount} production, ${devDepCount} dev dependencies`,
-    'info'
+    'info',
   );
 
   // publishConfig check
@@ -197,7 +238,7 @@ async function runChecks() {
     'Publish config set',
     !!pkg.publishConfig?.access,
     `access: ${pkg.publishConfig?.access || 'not set'}`,
-    'warning'
+    'warning',
   );
 
   // Print results

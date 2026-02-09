@@ -37,32 +37,32 @@ jobs:
       - name: Test CLI commands before publish
         run: |
           echo "Running comprehensive CLI tests before publish..."
-          
+
           # Test all main commands
           echo "✓ Testing --help"
           node dist/index.js --help
-          
+
           echo "✓ Testing --version"
           node dist/index.js --version
-          
+
           # Test login flow
           echo "✓ Testing login command"
           node dist/index.js login --githubId test_gh_001 --username testuser || true
-          
+
           # Test user commands
           echo "✓ Testing user get command"
           node dist/index.js user get --username testuser || true
-          
+
           # Verify all subcommands are available
           echo "✓ Verifying team command group"
           node dist/index.js team --help
-          
+
           echo "✓ Verifying repo command group"
           node dist/index.js repo --help
-          
+
           echo "✓ Verifying invite command group"
           node dist/index.js invite --help
-          
+
           echo "✅ All pre-publish CLI tests passed"
 
       - name: Publish to NPM

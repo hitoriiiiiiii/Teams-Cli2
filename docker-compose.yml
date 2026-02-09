@@ -9,10 +9,10 @@ services:
       - '3000:3000'
     volumes:
       - teams_cli_data:/app/.teams-cli
-    entrypoint: ["./docker-entrypoint.sh"]
-    command: ["--help"]
+    entrypoint: ['./docker-entrypoint.sh']
+    command: ['--help']
     healthcheck:
-      test: ["CMD", "node", "dist/index.js", "--help"]
+      test: ['CMD', 'node', 'dist/index.js', '--help']
       interval: 30s
       timeout: 10s
       retries: 3

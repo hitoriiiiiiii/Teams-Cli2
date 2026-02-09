@@ -10,8 +10,7 @@ export interface RateLimitConfig {
 
 function isTestOrCLI() {
   return (
-    process.env.NODE_ENV === 'test' ||
-    process.env.TEAMS_CLI_MODE === 'true'
+    process.env.NODE_ENV === 'test' || process.env.TEAMS_CLI_MODE === 'true'
   );
 }
 
@@ -29,14 +28,15 @@ export function createRateLimiter(config: RateLimitConfig) {
     let redisClient;
     try {
       redisClient = getRedisClient();
-    } catch (e) {
+    } catch {
       return next();
     }
 
     if (!redisClient) return next();
 
     try {
-      const ip = req.ip || (req.socket && req.socket.remoteAddress) || 'unknown';
+      const ip =
+        req.ip || (req.socket && req.socket.remoteAddress) || 'unknown';
       const userId = (req as any).user?.id || 'anonymous';
       const key = `${keyPrefix}${userId}:${ip}`;
 
@@ -46,10 +46,15 @@ export function createRateLimiter(config: RateLimitConfig) {
       }
 
       res.setHeader('X-RateLimit-Limit', maxRequests.toString());
-      res.setHeader('X-RateLimit-Remaining', Math.max(0, maxRequests - current).toString());
+      res.setHeader(
+        'X-RateLimit-Remaining',
+        Math.max(0, maxRequests - current).toString(),
+      );
 
       if (current > maxRequests) {
-        return res.status(429).json({ error: message, retryAfter: Math.ceil(windowMs / 1000) });
+        return res
+          .status(429)
+          .json({ error: message, retryAfter: Math.ceil(windowMs / 1000) });
       }
 
       return next();
@@ -85,7 +90,10 @@ export function generousRateLimit() {
   });
 }
 
-export async function checkInviteRateLimit(userId: number, teamId: number): Promise<boolean> {
+export async function checkInviteRateLimit(
+  userId: number,
+  teamId: number,
+): Promise<boolean> {
   if (isTestOrCLI()) return true;
   const redisClient = getRedisClient();
   if (!redisClient) return true;
@@ -100,12 +108,15 @@ export async function checkInviteRateLimit(userId: number, teamId: number): Prom
       await redisClient.expire(key, Math.ceil(windowMs / 1000));
     }
     return current <= maxInvites;
-  } catch (e) {
+  } catch {
     return true;
   }
 }
 
-export async function getInviteRateLimitRemaining(userId: number, teamId: number): Promise<number> {
+export async function getInviteRateLimitRemaining(
+  userId: number,
+  teamId: number,
+): Promise<number> {
   if (isTestOrCLI()) return 10;
   const redisClient = getRedisClient();
   if (!redisClient) return 10;
@@ -115,8 +126,7 @@ export async function getInviteRateLimitRemaining(userId: number, teamId: number
     const maxInvites = 10;
     const current = Number(await redisClient.get(key)) || 0;
     return Math.max(0, maxInvites - current);
-  } catch (e) {
+  } catch {
     return 10;
   }
 }
-

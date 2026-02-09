@@ -10,7 +10,11 @@ export async function upsertCommit(
   sha: string,
   message: string,
 ) {
-  const existing = await db.select().from(commits).where(eq(commits.sha, sha)).limit(1);
+  const existing = await db
+    .select()
+    .from(commits)
+    .where(eq(commits.sha, sha))
+    .limit(1);
   if (existing.length > 0) {
     return existing[0];
   }

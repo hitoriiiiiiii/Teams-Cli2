@@ -60,7 +60,7 @@ export async function getInviteWithDetails(code: string) {
 export async function updateInviteStatus(
   code: string,
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED',
-  acceptedAt?: string
+  acceptedAt?: string,
 ): Promise<Invite | null> {
   const updates: any = { status };
   if (acceptedAt) {
@@ -78,7 +78,9 @@ export async function updateInviteStatus(
 /**
  * Get pending invites for a team
  */
-export async function getPendingInvitesForTeam(teamId: number): Promise<Invite[]> {
+export async function getPendingInvitesForTeam(
+  teamId: number,
+): Promise<Invite[]> {
   return db
     .select()
     .from(invites)
@@ -88,7 +90,10 @@ export async function getPendingInvitesForTeam(teamId: number): Promise<Invite[]
 /**
  * Get invites sent by a user
  */
-export async function getInvitesSentByUser(userId: number, teamId: number): Promise<Invite[]> {
+export async function getInvitesSentByUser(
+  userId: number,
+  teamId: number,
+): Promise<Invite[]> {
   return db
     .select()
     .from(invites)
@@ -101,7 +106,7 @@ export async function getInvitesSentByUser(userId: number, teamId: number): Prom
 export async function countRecentInvites(
   userId: number,
   teamId: number,
-  sinceTimestamp: string
+  _sinceTimestamp: string,
 ): Promise<number> {
   const result = await db
     .select()
@@ -110,8 +115,8 @@ export async function countRecentInvites(
       and(
         eq(invites.invitedBy, userId),
         eq(invites.teamId, teamId),
-        eq(invites.status, 'PENDING')
-      )
+        eq(invites.status, 'PENDING'),
+      ),
     );
   return result.length;
 }
@@ -132,13 +137,15 @@ export async function deleteInvite(code: string): Promise<Invite | null> {
  */
 export async function getInvitesForUser(
   username: string,
-  status?: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED'
+  status?: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED',
 ): Promise<Invite[]> {
   if (status) {
     return db
       .select()
       .from(invites)
-      .where(and(eq(invites.invitedUser, username), eq(invites.status, status)));
+      .where(
+        and(eq(invites.invitedUser, username), eq(invites.status, status)),
+      );
   }
   return db.select().from(invites).where(eq(invites.invitedUser, username));
 }

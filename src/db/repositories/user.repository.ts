@@ -11,7 +11,7 @@ export type NewUser = typeof users.$inferInsert;
 export async function createUser(
   githubId: string,
   username: string,
-  email?: string
+  email?: string,
 ): Promise<User> {
   const result = await db
     .insert(users)
@@ -27,7 +27,9 @@ export async function createUser(
 /**
  * Get user by GitHub ID
  */
-export async function getUserByGithubId(githubId: string): Promise<User | null> {
+export async function getUserByGithubId(
+  githubId: string,
+): Promise<User | null> {
   const result = await db
     .select()
     .from(users)
@@ -39,7 +41,9 @@ export async function getUserByGithubId(githubId: string): Promise<User | null> 
 /**
  * Get user by username
  */
-export async function getUserByUsername(username: string): Promise<User | null> {
+export async function getUserByUsername(
+  username: string,
+): Promise<User | null> {
   const result = await db
     .select()
     .from(users)
@@ -52,11 +56,7 @@ export async function getUserByUsername(username: string): Promise<User | null> 
  * Get user by ID
  */
 export async function getUserById(id: number): Promise<User | null> {
-  const result = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, id))
-    .limit(1);
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
   return result[0] || null;
 }
 
@@ -100,7 +100,7 @@ export async function getAllUsers(): Promise<User[]> {
  */
 export async function updateUser(
   id: number,
-  updates: Partial<Omit<User, 'id' | 'createdAt'>>
+  updates: Partial<Omit<User, 'id' | 'createdAt'>>,
 ): Promise<User | null> {
   const result = await db
     .update(users)
@@ -114,10 +114,7 @@ export async function updateUser(
  * Delete user by ID
  */
 export async function deleteUser(id: number): Promise<User | null> {
-  const result = await db
-    .delete(users)
-    .where(eq(users.id, id))
-    .returning();
+  const result = await db.delete(users).where(eq(users.id, id)).returning();
   return result[0] || null;
 }
 

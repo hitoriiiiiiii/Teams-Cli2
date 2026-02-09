@@ -1,11 +1,13 @@
-
 /**
  * Quick Redis connectivity test with Invite Rate Limiter test
  * Run: npx ts-node test-redis.ts
  */
 
 import { initRedis, getRedisClient, closeRedis } from './src/api/redis';
-import { checkInviteRateLimit, getInviteRateLimitRemaining } from './src/api/rateLimiter';
+import {
+  checkInviteRateLimit,
+  getInviteRateLimitRemaining,
+} from './src/api/rateLimiter';
 
 async function testRedis() {
   console.log('🔍 Testing Redis Connection...\n');
@@ -61,12 +63,19 @@ async function testRedis() {
     const testUserId = 9999;
     const testTeamId = 8888;
 
-    console.log(`   Testing rate limit for user ${testUserId}, team ${testTeamId}`);
+    console.log(
+      `   Testing rate limit for user ${testUserId}, team ${testTeamId}`,
+    );
     for (let i = 1; i <= 12; i++) {
       const withinLimit = await checkInviteRateLimit(testUserId, testTeamId);
-      const remaining = await getInviteRateLimitRemaining(testUserId, testTeamId);
+      const remaining = await getInviteRateLimitRemaining(
+        testUserId,
+        testTeamId,
+      );
       const status = withinLimit ? '✅' : '❌';
-      console.log(`   Attempt ${i}: ${status} Within Limit: ${withinLimit}, Remaining: ${remaining}`);
+      console.log(
+        `   Attempt ${i}: ${status} Within Limit: ${withinLimit}, Remaining: ${remaining}`,
+      );
     }
 
     // Cleanup

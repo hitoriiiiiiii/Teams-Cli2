@@ -9,10 +9,7 @@ export type TeamMember = typeof teamMembers.$inferSelect;
  * Create a new team
  */
 export async function createTeam(name: string): Promise<Team> {
-  const result = await db
-    .insert(teams)
-    .values({ name })
-    .returning();
+  const result = await db.insert(teams).values({ name }).returning();
   return result[0];
 }
 
@@ -40,7 +37,7 @@ export async function getAllTeams(): Promise<Team[]> {
  */
 export async function addUserToTeam(
   userId: number,
-  teamId: number
+  teamId: number,
 ): Promise<TeamMember> {
   // Check if user already exists in team
   const existingMember = await db
@@ -69,7 +66,7 @@ export async function addUserToTeam(
  */
 export async function removeUserFromTeam(
   userId: number,
-  teamId: number
+  teamId: number,
 ): Promise<void> {
   const member = await db
     .select()
@@ -119,7 +116,7 @@ export async function getTeamsForUser(userId: number) {
  */
 export async function isUserMemberOfTeam(
   userId: number,
-  teamId: number
+  teamId: number,
 ): Promise<boolean> {
   const result = await db
     .select()
@@ -133,10 +130,7 @@ export async function isUserMemberOfTeam(
  * Delete team by ID
  */
 export async function deleteTeam(teamId: number): Promise<Team | null> {
-  const result = await db
-    .delete(teams)
-    .where(eq(teams.id, teamId))
-    .returning();
+  const result = await db.delete(teams).where(eq(teams.id, teamId)).returning();
   return result[0] || null;
 }
 
@@ -145,7 +139,7 @@ export async function deleteTeam(teamId: number): Promise<Team | null> {
  */
 export async function updateTeam(
   teamId: number,
-  updates: Partial<Omit<Team, 'id' | 'createdAt'>>
+  updates: Partial<Omit<Team, 'id' | 'createdAt'>>,
 ): Promise<Team | null> {
   const result = await db
     .update(teams)

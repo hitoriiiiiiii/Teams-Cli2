@@ -50,7 +50,7 @@ export async function getPackageInfo(packageName: string) {
       downloads: response.data.downloads || 'N/A',
       lastModified: response.data.time.modified,
     };
-  } catch (error) {
+  } catch {
     throw new Error(`Package not found: ${packageName}`);
   }
 }
@@ -58,10 +58,13 @@ export async function getPackageInfo(packageName: string) {
 /**
  * Get npm package download statistics
  */
-export async function getDownloadStats(packageName: string, period: string = 'last-month') {
+export async function getDownloadStats(
+  packageName: string,
+  period: string = 'last-month',
+) {
   try {
     const response = await axios.get(
-      `https://api.npmjs.org/downloads/point/${period}/${packageName}`
+      `https://api.npmjs.org/downloads/point/${period}/${packageName}`,
     );
     return {
       package: response.data.package,
@@ -70,7 +73,7 @@ export async function getDownloadStats(packageName: string, period: string = 'la
       start: response.data.start,
       end: response.data.end,
     };
-  } catch (error) {
+  } catch {
     throw new Error(`Failed to fetch download stats for ${packageName}`);
   }
 }
@@ -84,7 +87,7 @@ export async function searchPackages(query: string, limit: number = 20) {
       params: { q: query, size: limit },
     });
     return response.data;
-  } catch (error) {
+  } catch {
     throw new Error(`Search failed: ${query}`);
   }
 }
@@ -96,7 +99,7 @@ export async function getLatestVersion(packageName: string): Promise<string> {
   try {
     const response = await axios.get(`${NPM_REGISTRY}/${packageName}/latest`);
     return response.data.version;
-  } catch (error) {
+  } catch {
     throw new Error(`Failed to get latest version of ${packageName}`);
   }
 }
@@ -275,7 +278,10 @@ ${chalk.yellow('6. Installation Command:')}
 /**
  * Check npm authentication
  */
-export async function checkNpmAuth(): Promise<{ authenticated: boolean; username?: string }> {
+export async function checkNpmAuth(): Promise<{
+  authenticated: boolean;
+  username?: string;
+}> {
   try {
     const response = await axios.get(`${NPM_REGISTRY}/-/whoami`, {
       headers: {
@@ -286,7 +292,7 @@ export async function checkNpmAuth(): Promise<{ authenticated: boolean; username
       authenticated: true,
       username: response.data.username,
     };
-  } catch (error) {
+  } catch {
     return { authenticated: false };
   }
 }

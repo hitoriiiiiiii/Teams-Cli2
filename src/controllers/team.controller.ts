@@ -5,7 +5,6 @@ import {
   getTeamMembers as getTeamMembersRepo,
   getTeamById as getTeamByIdRepo,
   getTeamsForUser,
-  isUserMemberOfTeam,
 } from '../db/repositories';
 import { getUserById } from '../db/repositories';
 
@@ -60,7 +59,7 @@ export async function getTeamByUser(userId: number) {
   return getTeamsForUser(userId);
 }
 
-export async function getTeamByName(name: string) {
+export async function getTeamByName(_name: string) {
   // This would need to be added to the repository if used frequently
   // For now, we'll keep it simple - teams are typically accessed by ID
   throw new Error('getTeamByName should be refactored to use repository');

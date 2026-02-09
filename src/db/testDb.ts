@@ -1,14 +1,14 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
 
-import * as schema from "./schema";
+import * as schema from './schema';
 
 /**
  * Creates a fresh in-memory SQLite database for Jest tests.
  * Tables are created automatically.
  */
 export function createTestDb() {
-  const sqlite = new Database(":memory:");
+  const sqlite = new Database(':memory:');
 
   // Enable foreign key support
   sqlite.exec(`PRAGMA foreign_keys = ON;`);

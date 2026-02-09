@@ -7,5 +7,4 @@ process.on('unhandledRejection', (err) => {
   process.exit(1);
 });
 
-process.env.TEAMS_CLI_MODE = "true";
-
+process.env.TEAMS_CLI_MODE = 'true';

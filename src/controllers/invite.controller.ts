@@ -25,10 +25,16 @@ export async function sendInviteHandler(req: Request, res: Response) {
     if (!inviterId) return res.status(401).json({ error: 'Unauthorized' });
 
     const remaining = await getInviteRateLimitRemaining(inviterId, teamId);
-    if (remaining <= 0) return res.status(429).json({ error: 'Invite rate limit exceeded' });
+    if (remaining <= 0)
+      return res.status(429).json({ error: 'Invite rate limit exceeded' });
 
     const code = uuidv4();
-    const invite = await createInviteRepo({ code, teamId, invitedBy: inviterId, invitedUser });
+    const invite = await createInviteRepo({
+      code,
+      teamId,
+      invitedBy: inviterId,
+      invitedUser,
+    });
 
     return res.json({ success: true, invite: { code: invite.code } });
   } catch (e) {
@@ -45,7 +51,8 @@ export async function acceptInviteHandler(req: Request, res: Response) {
 
     const invite = await getInviteByCodeRepo(code);
     if (!invite) return res.status(404).json({ error: 'Invite not found' });
-    if (invite.status !== 'PENDING') return res.status(400).json({ error: 'Invite not pending' });
+    if (invite.status !== 'PENDING')
+      return res.status(400).json({ error: 'Invite not pending' });
 
     await addUserToTeam(userId, invite.teamId);
     await updateInviteStatusRepo(code, 'ACCEPTED', new Date().toISOString());
@@ -76,7 +83,8 @@ export async function rejectInviteHandler(req: Request, res: Response) {
 
     const invite = await getInviteByCodeRepo(code);
     if (!invite) return res.status(404).json({ error: 'Invite not found' });
-    if (invite.invitedBy !== userId) return res.status(403).json({ error: 'Forbidden' });
+    if (invite.invitedBy !== userId)
+      return res.status(403).json({ error: 'Forbidden' });
 
     await updateInviteStatusRepo(code, 'REJECTED');
     return res.json({ success: true });
@@ -87,7 +95,11 @@ export async function rejectInviteHandler(req: Request, res: Response) {
 }
 
 // Programmatic API used by CLI
-export async function sendInvite(teamId: number, inviterId: number, invitedUser: string) {
+export async function sendInvite(
+  teamId: number,
+  inviterId: number,
+  invitedUser: string,
+) {
   const remaining = await getInviteRateLimitRemaining(inviterId, teamId);
   if (remaining <= 0) throw new Error('Invite rate limit exceeded');
   const code = uuidv4();
@@ -105,7 +117,7 @@ export async function acceptInvite(code: string, userId: number) {
   return getInviteWithDetailsRepo(code);
 }
 
-export async function getTeamInvites(teamId: number, status?: string) {
+export async function getTeamInvites(teamId: number, _status?: string) {
   // Repository currently only supports pending invites; ignore status parameter
   return getPendingInvitesForTeamRepo(teamId);
 }
@@ -118,6 +130,7 @@ export async function rejectInvite(code: string) {
   const invite = await getInviteByCodeRepo(code);
   if (!invite) throw new Error('Invalid invite code');
   if (!invite.status) throw new Error('Invalid invite status');
-  if (invite.status !== 'PENDING') throw new Error(`Invite is already ${String(invite.status).toLowerCase()}`);
+  if (invite.status !== 'PENDING')
+    throw new Error(`Invite is already ${String(invite.status).toLowerCase()}`);
   return updateInviteStatusRepo(code, 'REJECTED');
 }

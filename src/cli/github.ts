@@ -3,7 +3,6 @@ import chalk from 'chalk';
 import { getAuthToken, writeConfig } from '../config/auth.config';
 import { upsertGitHubUser } from '../controllers/user.controller';
 
-
 export async function getGithubUser() {
   const token = getAuthToken();
 
@@ -45,7 +44,7 @@ export async function getGithubUser() {
     console.log(`Username : ${user.username}`);
     console.log(`Email    : ${user.email ?? 'Private'}`);
     console.log('User saved to DB:', user);
-    
+
     return user;
   } catch (err: any) {
     console.log(chalk.red('❌ Failed to fetch GitHub profile'));

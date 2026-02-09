@@ -27,7 +27,7 @@ const config: Config = {
   },
 };
 
-process.env.NODE_ENV = "test";
-process.env.TEAMS_CLI_MODE = "true";
+process.env.NODE_ENV = 'test';
+process.env.TEAMS_CLI_MODE = 'true';
 
 export default config;
