@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { eq } from 'drizzle-orm';
 
-import { db as defaultDb } from '../db/index.js';
-import { repos, commits as commitsTable } from '../db/schema.js';
+import { db as defaultDb } from '../db/index';
+import { repos, commits as commitsTable } from '../db/schema';
 
 export interface GitHubCommit {
   sha: string;

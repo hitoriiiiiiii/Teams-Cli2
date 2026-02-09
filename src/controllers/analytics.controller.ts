@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { db } from '../db/index.js';
-import { teamMembers, users } from '../db/schema.js';
+import { db } from '../db/index';
+import { teamMembers, users } from '../db/schema';
 import { eq } from 'drizzle-orm';
-import { getTeamLeaderboard } from '../services/analytics.services.js';
+import { getTeamLeaderboard } from '../services/analytics.services';
 
 export async function getTeamAnalytics(req: Request, res: Response) {
   const teamId = Number(req.params.teamId);

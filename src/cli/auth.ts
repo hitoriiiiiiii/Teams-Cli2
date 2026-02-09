@@ -5,7 +5,7 @@ import open from 'open';
 import {
   writeConfig,
   clearAuthToken,
-} from '../config/auth.config.js';
+} from '../config/auth.config';
 import { createUser, getUserByGithubId } from '../db/repositories/index.js';
 
 const CLIENT_ID = process.env.GITHUB_CLIENT_ID!;

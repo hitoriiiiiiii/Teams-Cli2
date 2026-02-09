@@ -1,4 +1,4 @@
-import { readConfig } from '../config/auth.config.js';
+import { readConfig } from '../config/auth.config';
 
 export function getCurrentUser() {
   const config = readConfig();

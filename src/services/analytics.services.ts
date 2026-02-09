@@ -1,5 +1,5 @@
-import { db } from '../db/index.js';
-import { users, teamMembers, commits, repos } from '../db/schema.js';
+import { db } from '../db/index';
+import { users, teamMembers, commits, repos } from '../db/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 
 export async function computeMemberActivity(teamId: number) {

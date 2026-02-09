@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db } from '../index.js';
-import { repos } from '../schema.js';
+import { db } from '../index';
+import { repos } from '../schema';
 
 export type Repo = typeof repos.$inferSelect;
 

@@ -1,5 +1,5 @@
-import { db } from '../db/index.js';
-import { commits } from '../db/schema.js';
+import { db } from '../db/index';
+import { commits } from '../db/schema';
 import { eq } from 'drizzle-orm';
 
 /**

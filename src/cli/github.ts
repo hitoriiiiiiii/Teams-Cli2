@@ -1,7 +1,7 @@
 import axios from 'axios';
 import chalk from 'chalk';
-import { getAuthToken, writeConfig } from '../config/auth.config.js';
-import { upsertGitHubUser } from '../controllers/user.controller.js';
+import { getAuthToken, writeConfig } from '../config/auth.config';
+import { upsertGitHubUser } from '../controllers/user.controller';
 
 export async function getGithubUser() {
   const token = getAuthToken();

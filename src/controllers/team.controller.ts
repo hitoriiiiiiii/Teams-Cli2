@@ -5,8 +5,8 @@ import {
   getTeamMembers as getTeamMembersRepo,
   getTeamById as getTeamByIdRepo,
   getTeamsForUser,
-} from '../db/repositories/index.js';
-import { getUserById } from '../db/repositories/index.js';
+} from '../db/repositories';
+import { getUserById } from '../db/repositories';
 
 //Create a team and add owner as member
 export async function createTeam(teamName: string, ownerUserId: number) {

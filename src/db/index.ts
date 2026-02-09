@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
-import * as schema from './schema.js';
+import * as schema from './schema';
 import path from 'path';
 import fs from 'fs';
 
@@ -21,6 +21,5 @@ export let db = drizzle(sqlite, { schema });
 
 // Helper to inject a different Drizzle instance (used by tests)
 export function setDb(newDb: typeof db) {
-    // @ts-ignore
   db = newDb;
 }

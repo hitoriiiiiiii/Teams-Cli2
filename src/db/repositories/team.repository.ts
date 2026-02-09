@@ -1,6 +1,6 @@
 import { eq, and } from 'drizzle-orm';
-import { db } from '../index.js';
-import { teams, teamMembers, users } from '../schema.js';
+import { db } from '../index';
+import { teams, teamMembers, users } from '../schema';
 
 export type Team = typeof teams.$inferSelect;
 export type TeamMember = typeof teamMembers.$inferSelect;

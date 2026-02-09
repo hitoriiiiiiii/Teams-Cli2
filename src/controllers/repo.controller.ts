@@ -2,7 +2,7 @@ import {
   createRepo as createRepoRepo,
   getReposByTeam as getReposByTeamRepo,
   deleteRepoByFullName as deleteRepoByFullNameRepo,
-} from '../db/repositories/index.js';
+} from '../db/repositories';
 
 export interface RepoData {
   githubId: string;

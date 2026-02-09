@@ -1,5 +1,4 @@
 {
-  "type": "module",
   "name": "@prarthana25/teams-cli",
   "version": "1.0.7",
   "description": "A comprehensive CLI tool for managing teams, team members, repositories, and analyzing team activity with GitHub OAuth integration",
