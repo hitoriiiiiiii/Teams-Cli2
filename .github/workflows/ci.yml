@@ -87,6 +87,7 @@ jobs:
         with:
           context: .
           push: false
+          load: true
           tags: teams-cli:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -94,6 +95,9 @@ jobs:
       - name: Test Docker image
         run: |
           echo "Testing Docker image..."
+          
+          # Verify image exists
+          docker images teams-cli:test
           
           # Test that the Docker container can start and show help
           docker run --rm teams-cli:test node dist/index.js --help
