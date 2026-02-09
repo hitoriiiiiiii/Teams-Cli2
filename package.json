@@ -72,10 +72,10 @@
     "express-rate-limit": "^8.2.1",
     "inquirer": "^8.2.7",
     "node-cron": "^4.2.1",
-    "open": "^11.0.0",
-    "ora": "^9.0.0",
-    "redis": "^5.10.0",
-    "uuid": "^13.0.0"
+    "open": "^8.4.2",
+    "ora": "^5.4.1",
+    "redis": "^4.7.1",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
