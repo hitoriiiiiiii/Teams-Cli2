@@ -6,7 +6,7 @@
 
     "sourceMap": false,
     "declaration": false,
-    "types": ["node"]
+    "types": ["node", "jest"]
   },
   "include": ["src/**/*"],
   "exclude": [

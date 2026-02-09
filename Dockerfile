@@ -1,8 +1,8 @@
 # Use official Node.js 20 Alpine image for smaller size
 FROM node:20-alpine
 
-# Install bash, Python, and build tools for better-sqlite3 compilation
-RUN apk add --no-cache bash python3 make g++
+# Install bash for better shell support
+RUN apk add --no-cache bash
 
 # Create app directory
 WORKDIR /app

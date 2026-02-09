@@ -1,10 +1,10 @@
 node_modules
+coverage
 .git
 .env
-coverage
-npm-debug.log
-Dockerfile
-docker-compose.yml
-.tgz
+*.tgz
 dev.db
 teams.db
+Dockerfile
+docker-compose.yml
+README.md
