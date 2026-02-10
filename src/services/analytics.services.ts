@@ -69,7 +69,7 @@ export async function getTeamLeaderboard(teamId: number) {
     .orderBy(desc(sql<number>`count(${commits.id})`));
 
   return leaderboard.map((item) => ({
-    authorId: item.author,
+    githubId: item.author,
     _count: { id: item.count },
   }));
 }

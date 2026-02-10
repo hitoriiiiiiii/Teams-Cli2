@@ -132,5 +132,15 @@ export async function rejectInvite(code: string) {
   if (!invite.status) throw new Error('Invalid invite status');
   if (invite.status !== 'PENDING')
     throw new Error(`Invite is already ${String(invite.status).toLowerCase()}`);
+
+  // Check if the current user is the invited user
+  const { getCurrentUser } = await import('../utils/currentUser');
+  const currentUser = getCurrentUser();
+  const { getUserByUsername } = await import('../controllers/user.controller');
+  const invitedUser = await getUserByUsername(invite.invitedUser);
+  if (!invitedUser || invitedUser.id !== currentUser.id) {
+    throw new Error('You are not authorized to reject this invite');
+  }
+
   return updateInviteStatusRepo(code, 'REJECTED');
 }

@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "0a8f8716-8dec-4877-89e0-257bed7c0b66",
+  "id": "0cdb0640-4259-47be-a6fa-9bd926e2a19c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "commits": {
@@ -48,13 +48,15 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
-          "default": "'2026-02-05T20:56:00.300Z'"
+          "default": "CURRENT_TIMESTAMP"
         }
       },
       "indexes": {
         "commits_sha_unique": {
           "name": "commits_sha_unique",
-          "columns": ["sha"],
+          "columns": [
+            "sha"
+          ],
           "isUnique": true
         }
       },
@@ -63,8 +65,12 @@
           "name": "commits_repoId_repos_id_fk",
           "tableFrom": "commits",
           "tableTo": "repos",
-          "columnsFrom": ["repoId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "repoId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -139,13 +145,15 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
-          "default": "'2026-02-05T20:56:00.300Z'"
+          "default": "CURRENT_TIMESTAMP"
         }
       },
       "indexes": {
         "invites_code_unique": {
           "name": "invites_code_unique",
-          "columns": ["code"],
+          "columns": [
+            "code"
+          ],
           "isUnique": true
         }
       },
@@ -154,8 +162,12 @@
           "name": "invites_teamId_teams_id_fk",
           "tableFrom": "invites",
           "tableTo": "teams",
-          "columnsFrom": ["teamId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "teamId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -163,8 +175,12 @@
           "name": "invites_invitedBy_users_id_fk",
           "tableFrom": "invites",
           "tableTo": "users",
-          "columnsFrom": ["invitedBy"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "invitedBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -217,7 +233,7 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
-          "default": "'2026-02-05T20:56:00.300Z'"
+          "default": "CURRENT_TIMESTAMP"
         }
       },
       "indexes": {},
@@ -226,8 +242,12 @@
           "name": "repos_teamId_teams_id_fk",
           "tableFrom": "repos",
           "tableTo": "teams",
-          "columnsFrom": ["teamId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "teamId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -266,13 +286,16 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
-          "default": "'2026-02-05T20:56:00.299Z'"
+          "default": "CURRENT_TIMESTAMP"
         }
       },
       "indexes": {
         "user_team_unique": {
           "name": "user_team_unique",
-          "columns": ["userId", "teamId"],
+          "columns": [
+            "userId",
+            "teamId"
+          ],
           "isUnique": true
         }
       },
@@ -281,8 +304,12 @@
           "name": "teamMembers_userId_users_id_fk",
           "tableFrom": "teamMembers",
           "tableTo": "users",
-          "columnsFrom": ["userId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -290,8 +317,12 @@
           "name": "teamMembers_teamId_teams_id_fk",
           "tableFrom": "teamMembers",
           "tableTo": "teams",
-          "columnsFrom": ["teamId"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "teamId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -323,7 +354,7 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
-          "default": "'2026-02-05T20:56:00.299Z'"
+          "default": "CURRENT_TIMESTAMP"
         }
       },
       "indexes": {},
@@ -377,13 +408,15 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
-          "default": "'2026-02-05T20:56:00.296Z'"
+          "default": "CURRENT_TIMESTAMP"
         }
       },
       "indexes": {
         "users_githubId_unique": {
           "name": "users_githubId_unique",
-          "columns": ["githubId"],
+          "columns": [
+            "githubId"
+          ],
           "isUnique": true
         }
       },

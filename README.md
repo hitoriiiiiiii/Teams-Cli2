@@ -122,49 +122,88 @@ teams analytics details --team-id 1
 ### Authentication
 
 ```bash
-teams login              # Authenticate with GitHub
-teams logout             # Sign out and clear tokens
+teams login              # Login to Teams CLI with GitHub OAuth
+teams logout             # Logout from Teams CLI
 teams whoami             # Show current logged-in user
+```
+
+### User Operations
+
+```bash
+teams user get [options] # Get another user's details
+
+Options:
+  -i, --id <id>          # User ID
+  -u, --username <username> # GitHub username
 ```
 
 ### Team Operations
 
 ```bash
+teams team create [name] # Create a new team
 teams team list          # List all teams
-teams team create NAME   # Create a new team
-teams team get ID        # Get team details
-teams team delete ID     # Delete a team
+teams team get -i <id>   # Get team details
+teams team delete -i <id> # Delete a team
+teams team join -i <id>  # Join a team
+teams team leave -i <id> # Leave a team
 ```
 
 ### Member Operations
 
 ```bash
-teams member list --team-id ID       # List team members
-teams member add --team-id ID --username USERNAME    # Add a member
-teams member remove --team-id ID --user-id USER_ID   # Remove a member
+teams member add -t <id> -u <username>    # Add member to team
+teams member remove -t <id> -u <username> # Remove member from team
+teams member list -t <id>                 # List team members
 ```
 
 ### Repository Operations
 
 ```bash
-teams repo list --team-id ID            # List team repositories
-teams repo add --team-id ID --url URL   # Add a repository
-teams repo remove --team-id ID --repo-id REPO_ID
+teams repo add <teamName> <repoName>      # Add a repo to a team
+teams repo list <teamName>                # List all repos of a team
+teams repo remove <teamName> <repoName>   # Remove a repo from a team
 ```
 
 ### Invite Operations
 
 ```bash
-teams invite list --team-id ID          # List invites
-teams invite send --team-id ID --username USERNAME  # Send invite
-teams invite accept --code CODE         # Accept invite
+teams invite send -t <id> -u <username>   # Send team invite
+teams invite accept -c <code>             # Accept an invite
+teams invite reject -c <code>             # Reject an invite
+teams invite list -t <id>                 # List pending invites for a team
 ```
 
-### Analytics
+### Commits Operations
 
 ```bash
-teams analytics summary --team-id ID    # Team activity summary
-teams analytics commits --repo-id ID    # Commit statistics
+teams commits list <owner> <repo> [options] # List commits for a repository
+teams commits get <owner> <repo> <sha>      # Get details of a specific commit
+
+```
+
+### Analytics Operations
+
+```bash
+teams analytics activity -t <id>          # Show member activity (7/14/30 days)
+teams analytics leaderboard -t <id>       # Show top contributors
+teams analytics member -t <id> -u <username> # Show analytics for a member
+teams analytics summary -t <id>           # Show team analytics summary
+```
+
+### Configuration
+
+```bash
+teams config set -k <key> -v <value>      # Set config value
+teams config get -k <key>                 # Get config value
+teams config list                         # List all config
+```
+
+### Utility
+
+```bash
+teams init               # Initialize Teams CLI project
+teams status             # Check CLI status
+teams help               # Show this help menu
 ```
 
 ### System

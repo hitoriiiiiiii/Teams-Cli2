@@ -59,10 +59,18 @@ export async function getTeamByUser(userId: number) {
   return getTeamsForUser(userId);
 }
 
-export async function getTeamByName(_name: string) {
-  // This would need to be added to the repository if used frequently
-  // For now, we'll keep it simple - teams are typically accessed by ID
-  throw new Error('getTeamByName should be refactored to use repository');
+export async function getTeamByName(name: string) {
+  const db = (await import('../db/index')).db;
+  const { teams } = await import('../db/schema');
+  const { eq } = await import('drizzle-orm');
+
+  const teamResult = await db
+    .select()
+    .from(teams)
+    .where(eq(teams.name, name))
+    .limit(1);
+
+  return teamResult[0] || null;
 }
 
 export async function listTeams(userId: number) {

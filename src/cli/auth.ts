@@ -6,7 +6,7 @@ import {
   writeConfig,
   clearAuthToken,
 } from '../config/auth.config';
-import { createUser, getUserByGithubId } from '../db/repositories/index.js';
+import { createUser, getUserByGithubId } from '../db/repositories/index';
 
 const CLIENT_ID = process.env.GITHUB_CLIENT_ID!;
 

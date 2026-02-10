@@ -4,7 +4,7 @@ CREATE TABLE `commits` (
 	`message` text NOT NULL,
 	`author` text,
 	`repoId` integer NOT NULL,
-	`createdAt` text DEFAULT '2026-02-05T20:56:00.300Z',
+	`createdAt` text DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (`repoId`) REFERENCES `repos`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
@@ -18,7 +18,7 @@ CREATE TABLE `invites` (
 	`status` text DEFAULT 'PENDING',
 	`expiresAt` text,
 	`acceptedAt` text,
-	`createdAt` text DEFAULT '2026-02-05T20:56:00.300Z',
+	`createdAt` text DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (`teamId`) REFERENCES `teams`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`invitedBy`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
@@ -30,7 +30,7 @@ CREATE TABLE `repos` (
 	`teamId` integer NOT NULL,
 	`githubId` text NOT NULL,
 	`fullName` text NOT NULL,
-	`createdAt` text DEFAULT '2026-02-05T20:56:00.300Z',
+	`createdAt` text DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (`teamId`) REFERENCES `teams`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
@@ -38,7 +38,7 @@ CREATE TABLE `teamMembers` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`userId` integer NOT NULL,
 	`teamId` integer NOT NULL,
-	`joinedAt` text DEFAULT '2026-02-05T20:56:00.299Z',
+	`joinedAt` text DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`teamId`) REFERENCES `teams`(`id`) ON UPDATE no action ON DELETE no action
 );
@@ -47,7 +47,7 @@ CREATE UNIQUE INDEX `user_team_unique` ON `teamMembers` (`userId`,`teamId`);--> 
 CREATE TABLE `teams` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`name` text NOT NULL,
-	`createdAt` text DEFAULT '2026-02-05T20:56:00.299Z'
+	`createdAt` text DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
 CREATE TABLE `users` (
@@ -56,7 +56,7 @@ CREATE TABLE `users` (
 	`username` text NOT NULL,
 	`email` text,
 	`activityStatus` text DEFAULT 'ACTIVE',
-	`createdAt` text DEFAULT '2026-02-05T20:56:00.296Z'
+	`createdAt` text DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `users_githubId_unique` ON `users` (`githubId`);

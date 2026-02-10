@@ -4,14 +4,12 @@ import { teams } from '../db/schema';
 import { computeMemberActivity } from '../services/analytics.services';
 
 export function startAnalyticsCron() {
-  cron.schedule('0 * * * *', async () => {
-    console.log('⏱ Running team analytics cron');
+    cron.schedule('0 0 * * *', async () => {
+        const teamResults = await db.select().from(teams);
+        const teamsData = teamResults;
 
-    const teamResults = await db.select().from(teams);
-    const teamsData = teamResults;
-
-    for (const team of teamsData) {
-      await computeMemberActivity(team.id);
-    }
-  });
+        for (const team of teamsData) {
+          await computeMemberActivity(team.id);
+        }
+    });
 }

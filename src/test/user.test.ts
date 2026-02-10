@@ -23,10 +23,7 @@ describe('User model (Drizzle)', () => {
   it('should create a user', async () => {
     // baseline user is created in beforeEach
     const all = await db.select().from(users);
-    console.log(
-      'DEBUG: all users after beforeEach ->',
-      JSON.stringify(all, null, 2),
-    );
+
     expect(all.length).toBeGreaterThanOrEqual(1);
     expect(all[0].username).toBe('prarthana');
   });

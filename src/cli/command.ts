@@ -33,6 +33,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { ensureUserInTeam, requireLogin } from './team';
+import { isUserMemberOfTeam } from '../db/repositories';
 import { getUserByUsername } from '../controllers/user.controller';
 import { getCommits, getCommit } from '../controllers/commits.controller';
 import { logger } from '../utils/logger';
@@ -333,7 +334,26 @@ team
       return;
     }
 
-    logger.success(`Team ${teamId} deleted`);
+    const spinner = startSpinner(
+      chalk.cyan(`Deleting team ${teamId}...`),
+      'cyan',
+    );
+
+    try {
+      const user = getCurrentUser();
+      const teamIdNum = Number(teamId);
+
+      // Verify user is a member of the team (assuming owner can delete)
+      await ensureUserInTeam(user.id, teamIdNum);
+
+      // Delete team from database
+      await db.delete(teams).where(eq(teams.id, teamIdNum));
+
+      spinner.succeed(chalk.green.bold(`✓ Team ${teamId} deleted successfully`));
+    } catch (error: any) {
+      spinner.fail(chalk.red.bold('Failed to delete team'));
+      logger.error(error.message);
+    }
   });
 
 team
@@ -348,7 +368,36 @@ team
       teamId = id;
     }
 
-    logger.success(`🤝 Joined team ${teamId}`);
+    const spinner = startSpinner(
+      chalk.cyan(`Joining team ${teamId}...`),
+      'cyan',
+    );
+
+    try {
+      const user = getCurrentUser();
+      const teamIdNum = Number(teamId);
+
+      // Check if team exists
+      const team = await getTeamById(teamIdNum);
+      if (!team) {
+        spinner.fail(chalk.red.bold('Team not found'));
+        return;
+      }
+
+      // Check if user is already a member
+      const isMember = await isUserMemberOfTeam(user.id, teamIdNum);
+      if (isMember) {
+        spinner.warn(chalk.yellow.bold('You are already a member of this team'));
+        return;
+      }
+
+      // Add user to team
+      await addUsertoTeam(user.id, teamIdNum);
+      spinner.succeed(chalk.green.bold(`✓ Successfully joined team ${team.name}`));
+    } catch (error: any) {
+      spinner.fail(chalk.red.bold('Failed to join team'));
+      logger.error(error.message);
+    }
   });
 
 team
@@ -372,7 +421,36 @@ team
       return;
     }
 
-    logger.success(`👋 Left team ${teamId}`);
+    const spinner = startSpinner(
+      chalk.cyan(`Leaving team ${teamId}...`),
+      'cyan',
+    );
+
+    try {
+      const user = getCurrentUser();
+      const teamIdNum = Number(teamId);
+
+      // Check if team exists
+      const team = await getTeamById(teamIdNum);
+      if (!team) {
+        spinner.fail(chalk.red.bold('Team not found'));
+        return;
+      }
+
+      // Check if user is a member
+      const isMember = await isUserMemberOfTeam(user.id, teamIdNum);
+      if (!isMember) {
+        spinner.warn(chalk.yellow.bold('You are not a member of this team'));
+        return;
+      }
+
+      // Remove user from team
+      await removeUserFromTeam(user.id, teamIdNum);
+      spinner.succeed(chalk.green.bold(`✓ Successfully left team ${team.name}`));
+    } catch (error: any) {
+      spinner.fail(chalk.red.bold('Failed to leave team'));
+      logger.error(error.message);
+    }
   });
 
 //Member commands
@@ -653,6 +731,7 @@ repo
       return;
     }
 
+    const user = getCurrentUser();
     const teamResult = await db
       .select()
       .from(teams)
@@ -664,7 +743,7 @@ repo
       return;
     }
 
-    await deleteRepoByFullName(team.id, `${finalTeamName}/${finalRepoName}`);
+    await deleteRepoByFullName(team.id, `${user.username}/${finalRepoName}`);
     logger.success(
       `🗑️ Repo ${finalRepoName} removed from team ${finalTeamName}`,
     );
@@ -1004,7 +1083,7 @@ analytics
         const userResult = await db
           .select()
           .from(users)
-          .where(eq(users.githubId, leaderboard[i].authorId!));
+          .where(eq(users.githubId, leaderboard[i].githubId!));
 
         const user = userResult[0];
 

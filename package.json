@@ -21,7 +21,7 @@
     "version:major": "npm version major",
     "test": "jest",
     "migrate:generate": "drizzle-kit generate --schema src/db/schema.ts --out migrations",
-    "migrate:push": "drizzle-kit push --connection sqlite:./teams.db",
+    "migrate:push": "drizzle-kit push",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts"
   },
