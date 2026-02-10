@@ -1,6 +1,6 @@
 {
   "name": "@prarthana25/teams-cli",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A comprehensive CLI tool for managing teams, team members, repositories, and analyzing team activity with GitHub OAuth integration",
   "main": "dist/index.js",
   "bin": {
@@ -14,6 +14,7 @@
     "dev": "ts-node src/index.ts",
     "build": "tsc -p tsconfig.build.json",
     "prepublishOnly": "npm run build",
+    "precheck": "ts-node scripts/pre-publish-check.ts",
     "pub": "npm publish --access public",
     "pub:beta": "npm publish --tag beta --access public",
     "version:patch": "npm version patch",
@@ -27,11 +28,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hitoriiiiiiii/Teams-Cli.git"
+    "url": "git+https://github.com/prarthana25/Teams-Cli.git"
   },
-  "homepage": "https://github.com/hitoriiiiiiii/Teams-Cli#readme",
+  "homepage": "https://github.com/prarthana25/Teams-Cli#readme",
   "bugs": {
-    "url": "https://github.com/hitoriiiiiiii/Teams-Cli/issues"
+    "url": "https://github.com/prarthana25/Teams-Cli/issues"
   },
   "keywords": [
     "cli",
@@ -46,7 +47,7 @@
     "collaboration",
     "repository-management"
   ],
-  "author": "hitoriiiiiiii (https://github.com/hitoriiiiiiii)",
+  "author": "prarthana25 (https://github.com/prarthana25)",
   "license": "MIT",
   "files": [
     "dist",

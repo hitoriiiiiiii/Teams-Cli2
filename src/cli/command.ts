@@ -27,8 +27,8 @@ import {
   getTeamLeaderboard,
 } from '../services/analytics.services';
 import { db } from '../db/index';
-import { users, teamMembers, repos, commits, teams } from '../db/schema';
-import { eq, count, desc, and } from 'drizzle-orm';
+import { users, teamMembers, repos, commits, teams, invites } from '../db/schema';
+import { eq, count, desc, and, sql } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -1025,30 +1025,30 @@ analytics
       await computeMemberActivity(Number(teamId));
 
       // Fetch updated member data with activity status
-      const data = await db
-        .select()
-        .from(teamMembers)
-        .where(eq(teamMembers.teamId, Number(teamId)))
-        .leftJoin(users, eq(teamMembers.userId, users.id));
+      const data = await db.query.teamMembers.findMany({
+        where: eq(teamMembers.teamId, Number(teamId)),
+        with: { user: true }
+      });
 
       spinner.succeed(chalk.green.bold('✓ Activity computed'));
       logger.title('📊 Member Activity');
 
-      data.forEach((m: any) => {
-        const statusMap: Record<string, string> = {
-          ACTIVE_7_DAYS: 'Active (7d)',
-          ACTIVE_14_DAYS: 'Warm (14d)',
-          ACTIVE_30_DAYS: 'Cold (30d)',
-          INACTIVE: 'Inactive',
-        };
-
-        const status = statusMap[m.activityStatus] || 'Unknown';
+      for (const member of data) {
+        if (!member.user) continue;
+        const username = member.user?.username ?? "Unknown";
+        const commitsResult = await db.select({ count: count() }).from(commits).leftJoin(repos, eq(commits.repoId, repos.id)).where(and(eq(commits.author, member.user.githubId), eq(repos.teamId, Number(teamId))));
+        const commitsCount = commitsResult[0].count;
+        const invitesResult = await db.select({ count: count() }).from(invites).where(and(eq(invites.invitedBy, member.user.id), eq(invites.teamId, Number(teamId))));
+        const invitesSent = invitesResult[0].count;
         console.log(
-          chalk.cyan(m.user.username) +
-            chalk.white(' → ') +
-            chalk.yellow(status),
+          chalk.white('- ') +
+            chalk.cyan(username) +
+            chalk.white(': ') +
+            chalk.green(`${commitsCount} commits`) +
+            chalk.white(', ') +
+            chalk.blue(`${invitesSent} invites sent`),
         );
-      });
+      }
     } catch (err) {
       spinner.fail(chalk.red.bold('Failed to compute activity'));
       console.error(err);

@@ -7,11 +7,12 @@
 
 import fs from 'fs';
 import path from 'path';
-import chalk from 'chalk';
 import { fileURLToPath } from 'url';
+import chalk from 'chalk';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const packageJsonPath = path.join(__dirname, 'package.json');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const packageJsonPath = path.join(__dirname, '..', 'package.json');
 
 interface CheckResult {
   name: string;

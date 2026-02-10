@@ -5,7 +5,7 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 
-import { sql } from 'drizzle-orm';
+import { sql, relations } from 'drizzle-orm';
 
 // Enums
 export const activityStatusEnum = ['ACTIVE', 'INACTIVE'] as const;
@@ -63,6 +63,14 @@ export const teamMembers = sqliteTable(
     ),
   }),
 );
+
+// Relations
+export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
+  user: one(users, {
+    fields: [teamMembers.userId],
+    references: [users.id],
+  }),
+}));
 
 // REPOS TABLE
 export const repos = sqliteTable('repos', {
