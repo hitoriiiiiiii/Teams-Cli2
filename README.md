@@ -289,6 +289,22 @@ Teams-CLI/
 
 ---
 
+## 🖼️ Architecture Diagram
+
+![Architecture Diagram](./architecture-diagram.svg)
+
+### System Architecture
+
+![Architecture 1](./assets/architecture1.jpg)
+
+![Architecture 2](./assets/architecture2.jpg)
+
+### Output
+
+![Output](./assets/output.png)
+
+---
+
 ## 🚀 Getting Started
 
 ### 📋 Prerequisites
