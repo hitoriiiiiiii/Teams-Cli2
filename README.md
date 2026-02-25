@@ -926,9 +926,9 @@ PORT=3001
 
 ## Additional Resources
 
-- **[API_RATE_LIMITING.md](./API_RATE_LIMITING.md)** - Comprehensive rate limiting documentation
-- **[NPM_SETUP_SUMMARY.md](./NPM_SETUP_SUMMARY.md)** - NPM package setup guid
-- **[FEATURES_SUMMARY.md](./FEATURES_SUMMARY.md)** - Feature overview and capabilities
+- **[API_RATE_LIMITING.md](./docs/API_RATE_LIMITING.md)** - Comprehensive rate limiting documentation
+- **[NPM_SETUP_SUMMARY.md](./docs/NPM_SETUP_SUMMARY.md)** - NPM package setup guide
+- **[FEATURES_SUMMARY.md](./docs/FEATURES_SUMMARY.md)** - Feature overview and capabilities
 
 ---
 

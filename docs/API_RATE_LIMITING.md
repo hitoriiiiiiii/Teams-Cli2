@@ -8,7 +8,9 @@ This project now includes a Redis-based rate limiting system for API endpoints.
 
 1. **Redis Server** - Install and run Redis locally or use a cloud Redis service
 
-   ```bash
+   
+```
+bash
    # macOS
    brew install redis
    brew services start redis
@@ -19,22 +21,27 @@ This project now includes a Redis-based rate limiting system for API endpoints.
 
    # Windows
    Download from: https://github.com/microsoftarchive/redis/releases
-   ```
+   
+```
 
 2. **Environment Configuration**
 
    Update `.env`:
 
-   ```env
+   
+```
+env
    REDIS_HOST=localhost
    REDIS_PORT=6379
    REDIS_PASSWORD=          # Optional, leave empty if no password
    API_PORT=3000
-   ```
+   
+```
 
 ## Running the API Server
 
-```bash
+```
+bash
 npm run api
 ```
 
@@ -42,13 +49,13 @@ This starts the Express server on `http://localhost:3000` with Redis-based rate 
 
 ## Rate Limiting Strategies
 
-### 1. **Global Rate Limit**
+### 1. Global Rate Limit
 
 - Applied to ALL routes by default
 - **Limit**: 100 requests per minute
 - **For**: General traffic control
 
-### 2. **User-Based Rate Limit** (default)
+### 2. User-Based Rate Limit (default)
 
 - Applied to authenticated user endpoints
 - **Limit**: 50 requests per hour
@@ -58,7 +65,7 @@ This starts the Express server on `http://localhost:3000` with Redis-based rate 
   - `POST /api/repos` - Create repository
   - `GET /api/repos` - List repositories
 
-### 3. **Strict Rate Limit** (Authentication)
+### 3. Strict Rate Limit (Authentication)
 
 - Applied to login/register endpoints
 - **Limit**: 5 requests per 15 minutes
@@ -67,7 +74,7 @@ This starts the Express server on `http://localhost:3000` with Redis-based rate 
   - `POST /api/auth/login`
   - `POST /api/auth/register`
 
-### 4. **Generous Rate Limit** (Public endpoints)
+### 4. Generous Rate Limit (Public endpoints)
 
 - Applied to public data endpoints
 - **Limit**: 1000 requests per minute
@@ -79,7 +86,8 @@ This starts the Express server on `http://localhost:3000` with Redis-based rate 
 
 ### Using cURL
 
-```bash
+```
+bash
 # Make a request to a rate-limited endpoint
 curl -i http://localhost:3000/api/teams
 
@@ -91,7 +99,8 @@ curl -i http://localhost:3000/api/teams
 
 ### Rate Limit Exceeded Response
 
-```json
+```
+json
 {
   "error": "Too many requests, please try again later.",
   "retryAfter": 3600
@@ -104,7 +113,8 @@ HTTP Status: `429 Too Many Requests`
 
 ### Adding Rate Limiting to Custom Routes
 
-```typescript
+```
+typescript
 import { rateLimitByUser, strictRateLimit } from './api/rateLimiter';
 import { app } from './api/server';
 
@@ -154,7 +164,8 @@ ratelimit:user123:192.168.1.1
 
 ### Check Rate Limit Status
 
-```bash
+```
+bash
 # Connect to Redis
 redis-cli
 
@@ -172,20 +183,23 @@ EXPIRE ratelimit:user123:192.168.1.1 3600
 
 ### Health Check
 
-```bash
+```
+bash
 GET /health
 ```
 
 ### Public Teams
 
-```bash
+```
+bash
 GET /api/public/teams
 Rate Limit: 1000/minute
 ```
 
 ### Team Management
 
-```bash
+```
+bash
 GET /api/teams
 Rate Limit: 50/hour
 
@@ -195,7 +209,8 @@ Rate Limit: 20/hour
 
 ### Authentication
 
-```bash
+```
+bash
 POST /api/auth/login
 Rate Limit: 5/15 minutes
 
@@ -205,7 +220,8 @@ Rate Limit: 5/15 minutes
 
 ### Repository Management
 
-```bash
+```
+bash
 GET /api/repos
 Rate Limit: 50/hour
 
@@ -238,12 +254,13 @@ This ensures the API remains available even if Redis is unavailable.
 ### Redis Connection Error
 
 ```
-⚠️ Redis connection failed. Rate limiting will be disabled.
+Warning: Redis connection failed. Rate limiting will be disabled.
 ```
 
 **Solution**: Ensure Redis server is running:
 
-```bash
+```
+bash
 # Check if Redis is running
 redis-cli ping
 # Should return: PONG
@@ -274,4 +291,4 @@ redis-cli ping
 
 ---
 
-**Status**: ✅ Rate limiting with Redis is fully implemented and production-ready!
+**Status**: Rate limiting with Redis is fully implemented and production-ready!
